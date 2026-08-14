@@ -425,15 +425,18 @@ function renderHourlyForecast(hourly) {
   if (!hourly || !hourly.time) return;
   el.hourlyForecast.innerHTML = '';
 
-  const now = new Date();
-  const currentISO = now.toISOString().slice(0, 13); // "YYYY-MM-DDTHH"
+  const nowMs = new Date().getTime();
 
-  // Find start index matching current hour
+  // Find start index matching current local hour closest to now
   let startIndex = 0;
+  let minDiff = Infinity;
+
   for (let idx = 0; idx < hourly.time.length; idx++) {
-    if (hourly.time[idx].startsWith(currentISO)) {
+    const itemDate = new Date(hourly.time[idx]).getTime();
+    const diff = Math.abs(itemDate - nowMs);
+    if (diff < minDiff) {
+      minDiff = diff;
       startIndex = idx;
-      break;
     }
   }
 
