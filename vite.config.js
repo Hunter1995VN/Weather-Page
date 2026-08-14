@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: '/Weather-Page/',
+  base: './', // Use relative path for flawless GitHub Pages & subfolder deployments
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
