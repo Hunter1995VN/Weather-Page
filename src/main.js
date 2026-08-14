@@ -588,6 +588,16 @@ function setupEvents() {
       el.searchSuggestions.classList.add('hidden');
     }
   });
+
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      if (state.map) {
+        state.map.invalidateSize();
+      }
+    }, 150);
+  });
 }
 
 // Initialize Application
