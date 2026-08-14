@@ -298,7 +298,7 @@ body {
 /* Dashboard Grid 2 Columns */
 .dashboard-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1.05fr 1fr;
   gap: 16px;
   align-items: start;
   width: 100%;
@@ -308,7 +308,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  min-width: 0; /* Prevents overflow from children */
+  min-width: 0;
   width: 100%;
 }
 
@@ -364,17 +364,23 @@ body {
   width: 100%;
 }
 
+.location-info {
+  flex: 1;
+  min-width: 0;
+}
+
 .location-info h2 {
   font-size: 22px;
   font-weight: 800;
   letter-spacing: -0.5px;
   line-height: 1.2;
+  word-break: break-word;
 }
 
 .location-info p {
   color: var(--text-secondary);
-  font-size: 13px;
-  margin-top: 2px;
+  font-size: 12px;
+  margin-top: 3px;
 }
 
 .live-time {
@@ -393,15 +399,15 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin: 16px 0;
+  margin: 14px 0;
   gap: 12px;
-  flex-wrap: wrap;
 }
 
 .temp-container {
   display: flex;
   align-items: flex-start;
   gap: 2px;
+  flex-shrink: 0;
 }
 
 .main-temp {
@@ -425,12 +431,14 @@ body {
 .weather-status {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  text-align: right;
 }
 
 .weather-icon-large {
-  font-size: 48px;
+  font-size: 46px;
   line-height: 1;
+  flex-shrink: 0;
 }
 
 .status-details {
@@ -453,10 +461,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   padding-top: 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
-  flex-wrap: wrap;
 }
 
 .minmax-tag, .update-tag {
@@ -746,25 +753,37 @@ body {
   display: none !important;
 }
 
-/* Responsive Breakpoints */
-@media (max-width: 1100px) {
+/* Responsive Layout */
+@media (max-width: 1200px) {
   .metrics-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (max-width: 900px) {
+/* Single column stack for screens <= 768px (Mobile & Small Tablets) */
+@media (max-width: 768px) {
   .dashboard-grid {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
   }
-  
+
+  /* Un-nest columns so we can re-order Map right after Hero Card on mobile */
+  .column-left, .column-right {
+    display: contents;
+  }
+
+  .card-hero { order: 1; }
+  .card-map { order: 2; }
+  .card-hourly { order: 3; }
+  .metrics-grid { order: 4; }
+  .card-daily { order: 5; }
+
   .map-wrapper {
     height: 280px;
     min-height: 280px;
   }
-}
 
-@media (max-width: 640px) {
   .app-container {
     padding: 12px;
   }
@@ -796,12 +815,12 @@ body {
   }
 
   .hero-body {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
   }
 
   .main-temp {
-    font-size: 48px;
+    font-size: 46px;
   }
 }
