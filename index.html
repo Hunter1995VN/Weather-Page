@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SkyPulse - Dự báo thời tiết & Bản đồ định vị trực tiếp</title>
+  
+  <!-- SEO & Meta -->
+  <meta name="description" content="Ứng dụng dự báo thời tiết thời gian thực theo vị trí của bạn, tích hợp bản đồ tương tác chính xác, chỉ số AQI, UV và dự báo 7 ngày." />
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌤️</text></svg>" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  
+  <!-- Custom Style -->
+  <link rel="stylesheet" href="./src/style.css" />
+</head>
+<body class="theme-default">
+  <div id="app" class="app-container">
+    
+    <!-- Background Dynamic Dynamic Weather Particles/Glow -->
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+
+    <!-- Header Navigation & Search -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-icon">🌤️</div>
+        <div class="brand-text">
+          <h1>SkyPulse</h1>
+          <span class="badge">Live Radar & Weather</span>
+        </div>
+      </div>
+
+      <div class="search-box">
+        <div class="search-input-wrapper">
+          <i data-lucide="search" class="search-icon"></i>
+          <input type="text" id="citySearch" placeholder="Tìm kiếm thành phố, địa danh..." autocomplete="off" />
+          <button id="clearSearch" class="clear-btn hidden" aria-label="Xóa">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <div id="searchSuggestions" class="search-suggestions hidden"></div>
+      </div>
+
+      <div class="actions">
+        <button id="btnGeo" class="btn btn-primary" title="Lấy thời tiết theo vị trí của bạn">
+          <i data-lucide="locate"></i>
+          <span>Vị trí của tôi</span>
+        </button>
+        <button id="btnRefresh" class="btn btn-icon" title="Làm mới dữ liệu">
+          <i data-lucide="refresh-cw"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Layout -->
+    <main class="app-main">
+      
+      <!-- Loading Overlay -->
+      <div id="loader" class="loader-overlay hidden">
+        <div class="spinner"></div>
+        <p id="loaderText">Đang tải dữ liệu vị trí và thời tiết...</p>
+      </div>
+
+      <!-- Error State Banner -->
+      <div id="errorBanner" class="error-banner hidden">
+        <i data-lucide="alert-triangle"></i>
+        <span id="errorMessage">Không thể kết nối đến máy chủ thời tiết.</span>
+        <button id="btnRetry" class="btn btn-sm">Thử lại</button>
+      </div>
+
+      <!-- Dashboard Grid -->
+      <div class="dashboard-grid">
+
+        <!-- Left Column: Hero Current Weather & Highlights -->
+        <section class="column-left">
+          
+          <!-- Hero Card: Current Weather -->
+          <div class="card card-hero">
+            <div class="hero-header">
+              <div class="location-info">
+                <h2 id="locationName">Đang định vị...</h2>
+                <p id="locationSub">Đang cập nhật tọa độ...</p>
+              </div>
+              <div class="live-time" id="currentTime">--:--</div>
+            </div>
+
+            <div class="hero-body">
+              <div class="temp-container">
+                <div class="main-temp" id="currentTemp">--°</div>
+                <div class="temp-unit">C</div>
+              </div>
+              <div class="weather-status">
+                <div class="weather-icon-large" id="weatherIcon">🌤️</div>
+                <div class="status-details">
+                  <span class="status-text" id="weatherDesc">Đang tải...</span>
+                  <span class="feels-like" id="feelsLike">Cảm giác như --°C</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="hero-footer">
+              <div class="minmax-tag">
+                <i data-lucide="arrow-down" class="text-blue"></i>
+                <span id="tempMin">Thấp: --°</span>
+              </div>
+              <div class="minmax-tag">
+                <i data-lucide="arrow-up" class="text-red"></i>
+                <span id="tempMax">Cao: --°</span>
+              </div>
+              <div class="update-tag">
+                <i data-lucide="clock"></i>
+                <span id="lastUpdated">Cập nhật: Mới xong</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hourly Forecast Card -->
+          <div class="card card-hourly">
+            <div class="card-header">
+              <h3><i data-lucide="clock-3"></i> Dự báo 24 giờ tới</h3>
+            </div>
+            <div class="hourly-scroll" id="hourlyForecast">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- Weather Details Metrics Grid -->
+          <div class="metrics-grid">
+            
+            <div class="card card-metric">
+              <div class="metric-icon bg-blue"><i data-lucide="droplets"></i></div>
+              <div class="metric-content">
+                <span class="metric-label">Độ ẩm</span>
+                <span class="metric-value" id="humidity">--%</span>
+                <span class="metric-sub" id="humiditySub">Điểm sương: --°C</span>
+              </div>
+            </div>
+
+            <div class="card card-metric">
+              <div class="metric-icon bg-cyan"><i data-lucide="wind"></i></div>
+              <div class="metric-content">
+                <span class="metric-label">Gió</span>
+                <span class="metric-value" id="windSpeed">-- km/h</span>
+                <span class="metric-sub" id="windDir">Hướng: --</span>
+              </div>
+            </div>
+
+            <div class="card card-metric">
+              <div class="metric-icon bg-orange"><i data-lucide="sun"></i></div>
+              <div class="metric-content">
+                <span class="metric-label">Chỉ số UV</span>
+                <span class="metric-value" id="uvIndex">--</span>
+                <span class="metric-sub" id="uvStatus">An toàn</span>
+              </div>
+            </div>
+
+            <div class="card card-metric">
+              <div class="metric-icon bg-emerald"><i data-lucide="activity"></i></div>
+              <div class="metric-content">
+                <span class="metric-label">Chất lượng không khí</span>
+                <span class="metric-value" id="aqiIndex">-- AQI</span>
+                <span class="metric-sub" id="aqiStatus">Đang cập nhật...</span>
+              </div>
+            </div>
+
+            <div class="card card-metric">
+              <div class="metric-icon bg-purple"><i data-lucide="gauge"></i></div>
+              <div class="metric-content">
+                <span class="metric-label">Áp suất</span>
+                <span class="metric-value" id="pressure">-- hPa</span>
+                <span class="metric-sub">Bình thường</span>
+              </div>
+            </div>
+
+            <div class="card card-metric">
+              <div class="metric-icon bg-amber"><i data-lucide="eye"></i></div>
+              <div class="metric-content">
+                <span class="metric-label">Tầm nhìn</span>
+                <span class="metric-value" id="visibility">-- km</span>
+                <span class="metric-sub">Rõ ràng</span>
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- Right Column: Interactive Map & 7-Day Forecast -->
+        <section class="column-right">
+          
+          <!-- Interactive Map Container -->
+          <div class="card card-map">
+            <div class="card-header map-header">
+              <h3><i data-lucide="map-pin"></i> Vị trí của bạn trên Bản đồ Tương tác</h3>
+              <div class="map-controls">
+                <span class="map-hint"><i data-lucide="mouse-pointer-click"></i> Nhấp vào bản đồ để xem thời tiết</span>
+                <button id="btnRecenter" class="btn btn-icon btn-sm" title="Về vị trí người dùng">
+                  <i data-lucide="crosshair"></i>
+                </button>
+              </div>
+            </div>
+            
+            <div class="map-wrapper">
+              <div id="map"></div>
+              <div class="map-coords-badge" id="mapCoords">Vĩ độ: -- | Kinh độ: --</div>
+            </div>
+          </div>
+
+          <!-- 7-Day Forecast Card -->
+          <div class="card card-daily">
+            <div class="card-header">
+              <h3><i data-lucide="calendar-days"></i> Dự báo 7 ngày tới</h3>
+            </div>
+            <div class="daily-list" id="dailyForecast">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+        </section>
+
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>Powered by Open-Meteo & Leaflet OpenStreetMap • Phát triển với 🔥 thiết kế Premium UI/UX</p>
+    </footer>
+
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
