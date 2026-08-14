@@ -123,9 +123,9 @@ function hideLoader() {
 }
 
 // Formatters
-function getDayName(dateStr, isToday = false) {
+function getDayName(timeInput, isToday = false) {
   if (isToday) return 'Hôm nay';
-  const date = new Date(dateStr);
+  const date = typeof timeInput === 'number' ? new Date(timeInput * 1000) : new Date(timeInput);
   const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
   return days[date.getDay()];
 }
@@ -317,7 +317,7 @@ async function fetchWeatherForCoords(lat, lon, isUserGeo = false) {
   state.isUserLocation = isUserGeo;
 
   try {
-    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,weather_code,surface_pressure,wind_speed_10m,wind_direction_10m&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,uv_index_max&timezone=auto`;
+    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,weather_code,surface_pressure,wind_speed_10m,wind_direction_10m&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,uv_index_max&timezone=auto&timeformat=unixtime`;
     const aqiUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi,pm2_5,pm10`;
 
     // Fetch primary weather data first
@@ -425,15 +425,15 @@ function renderHourlyForecast(hourly) {
   if (!hourly || !hourly.time) return;
   el.hourlyForecast.innerHTML = '';
 
-  const nowMs = new Date().getTime();
+  const nowSec = Math.floor(Date.now() / 1000);
 
-  // Find start index matching current local hour closest to now
+  // Find start index matching current local hour closest to nowSec
   let startIndex = 0;
   let minDiff = Infinity;
 
   for (let idx = 0; idx < hourly.time.length; idx++) {
-    const itemDate = new Date(hourly.time[idx]).getTime();
-    const diff = Math.abs(itemDate - nowMs);
+    const timeSec = hourly.time[idx];
+    const diff = Math.abs(timeSec - nowSec);
     if (diff < minDiff) {
       minDiff = diff;
       startIndex = idx;
@@ -445,7 +445,7 @@ function renderHourlyForecast(hourly) {
     const dataIdx = startIndex + i;
     if (dataIdx >= hourly.time.length) break;
 
-    const date = new Date(hourly.time[dataIdx]);
+    const date = new Date(hourly.time[dataIdx] * 1000);
     const hourNum = date.getHours();
 
     const code = hourly.weather_code[dataIdx];
