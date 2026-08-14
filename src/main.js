@@ -181,8 +181,8 @@ function initMap() {
       zoomControl: true
     });
 
-    // Tile Layer 1: OpenStreetMap Standard (Full street resolution, maxNativeZoom: 18)
-    state.baseTileOsm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // Tile Layer 1: OpenStreetMap Standard (Full street resolution)
+    state.baseTileOsm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       minZoom: 1,
       maxZoom: 19,
       maxNativeZoom: 18,
@@ -277,6 +277,8 @@ async function loadRadarOverlay() {
         state.radarLayer = L.tileLayer(`https://tilecache.rainviewer.com/v2/radar/${latestTime}/256/{z}/{x}/{y}/2/1_1.png`, {
           opacity: 0.65,
           zIndex: 500,
+          maxNativeZoom: 12,
+          maxZoom: 19,
           attribution: '&copy; <a href="https://www.rainviewer.com/">RainViewer Radar</a>'
         });
         if (state.radarVisible) {
