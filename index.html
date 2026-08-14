@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SkyPulse Weather - Live Radar & Weather Experience</title>
+  <title>SkyPulse Weather - Dự báo thời tiết & Bản đồ định vị</title>
   
   <!-- SEO & Meta -->
-  <meta name="description" content="Ứng dụng dự báo thời tiết thời gian thực theo vị trí địa lý của bạn, tích hợp bản đồ vệ tinh & radar mây mưa chính xác." />
+  <meta name="description" content="Ứng dụng dự báo thời tiết thời gian thực theo vị trí địa lý của bạn, tích hợp bản đồ địa hình HD chính xác." />
   <meta name="theme-color" content="#0b0f19" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
@@ -22,12 +22,12 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   
   <!-- Custom Style -->
-  <link rel="stylesheet" href="./src/style.css?v=2.0.0" />
+  <link rel="stylesheet" href="./src/style.css?v=3.0.0" />
 </head>
 <body class="theme-default">
   <div id="app" class="app-container">
     
-    <!-- Background Dynamic Dynamic Weather Particles/Glow -->
+    <!-- Dynamic Background Glow Blobs -->
     <div class="bg-glow bg-glow-1"></div>
     <div class="bg-glow bg-glow-2"></div>
 
@@ -37,7 +37,7 @@
         <div class="brand-icon">🌤️</div>
         <div class="brand-text">
           <h1>SkyPulse</h1>
-          <span class="badge">Live Radar & GPS Weather</span>
+          <span class="badge">Live GPS Weather</span>
         </div>
       </div>
 
@@ -79,17 +79,17 @@
         <button id="btnRetry" class="btn btn-sm">Thử lại</button>
       </div>
 
-      <!-- Dashboard Grid -->
+      <!-- Dashboard Grid (60% Main Weather & 40% Map + Metrics) -->
       <div class="dashboard-grid">
 
-        <!-- Left Column: Hero Current Weather & Map -->
+        <!-- Left Column: Current Weather, 24h & 7-Day Forecast -->
         <section class="column-left">
           
           <!-- Hero Card: Current Weather -->
           <div class="card card-hero">
             <div class="hero-header">
               <div class="location-info">
-                <h2 id="locationName">Đang xác định vị trí...</h2>
+                <h2 id="locationName">Đang định vị...</h2>
                 <p id="locationSub">Đang quét tọa độ GPS...</p>
               </div>
               <div class="live-time" id="currentTime">--:--</div>
@@ -125,19 +125,38 @@
             </div>
           </div>
 
+          <!-- Hourly Forecast Card -->
+          <div class="card card-hourly">
+            <div class="card-header">
+              <h3><i data-lucide="clock-3"></i> Dự báo 24 giờ tới</h3>
+            </div>
+            <div class="hourly-scroll" id="hourlyForecast">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- 7-Day Forecast Card -->
+          <div class="card card-daily">
+            <div class="card-header">
+              <h3><i data-lucide="calendar-days"></i> Dự báo 7 ngày tới</h3>
+            </div>
+            <div class="daily-list" id="dailyForecast">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+        </section>
+
+        <!-- Right Column: Interactive Map & Weather Metrics -->
+        <section class="column-right">
+          
           <!-- Interactive Map Container -->
           <div class="card card-map">
             <div class="card-header map-header">
               <div class="map-title-group">
-                <h3><i data-lucide="map-pin"></i> Bản đồ Định vị & Weather Radar</h3>
+                <h3><i data-lucide="map-pin"></i> Bản đồ Định vị Vị trí Trực tiếp</h3>
               </div>
               <div class="map-controls">
-                <button id="btnMapStyle" class="btn btn-sm btn-map-style" title="Chuyển chế độ Bản đồ / Ảnh Vệ tinh">
-                  <i data-lucide="layers"></i> <span>Bản đồ Vệ tinh</span>
-                </button>
-                <button id="btnRadarToggle" class="btn btn-sm btn-radar active" title="Bật/Tắt Radar Mưa Live">
-                  <span class="radar-dot"></span> Radar Mưa
-                </button>
                 <button id="btnRecenter" class="btn btn-icon btn-sm" title="Về vị trí của tôi">
                   <i data-lucide="crosshair"></i>
                 </button>
@@ -149,25 +168,10 @@
               <div class="map-coords-badge" id="mapCoords">Vị trí: Đang xác định...</div>
             </div>
             <div class="map-footer-hint">
-              <i data-lucide="mouse-pointer-click"></i> <span>Nhấp vào bất kì vị trí nào trên bản đồ để xem chi tiết thời tiết & cảnh báo mưa khu vực đó.</span>
+              <i data-lucide="mouse-pointer-click"></i> <span>Nhấp vào bất kì vị trí nào trên bản đồ để xem chi tiết thời tiết khu vực đó.</span>
             </div>
           </div>
 
-          <!-- Hourly Forecast Card -->
-          <div class="card card-hourly">
-            <div class="card-header">
-              <h3><i data-lucide="clock-3"></i> Dự báo 24 giờ tới</h3>
-            </div>
-            <div class="hourly-scroll" id="hourlyForecast">
-              <!-- Rendered via JS -->
-            </div>
-          </div>
-
-        </section>
-
-        <!-- Right Column: Weather Metrics & 7-Day Forecast -->
-        <section class="column-right">
-          
           <!-- Weather Details Metrics Grid -->
           <div class="metrics-grid">
             
@@ -227,16 +231,6 @@
 
           </div>
 
-          <!-- 7-Day Forecast Card -->
-          <div class="card card-daily">
-            <div class="card-header">
-              <h3><i data-lucide="calendar-days"></i> Dự báo 7 ngày tới</h3>
-            </div>
-            <div class="daily-list" id="dailyForecast">
-              <!-- Rendered via JS -->
-            </div>
-          </div>
-
         </section>
 
       </div>
@@ -244,11 +238,11 @@
 
     <!-- Footer -->
     <footer class="app-footer">
-      <p>Powered by Open-Meteo & Leaflet OpenStreetMap • SkyPulse v2.0</p>
+      <p>Powered by Open-Meteo & Leaflet OpenStreetMap • SkyPulse v3.0 Master Release</p>
     </footer>
 
   </div>
 
-  <script type="module" src="./src/main.js?v=2.0.0"></script>
+  <script type="module" src="./src/main.js?v=3.0.0"></script>
 </body>
 </html>

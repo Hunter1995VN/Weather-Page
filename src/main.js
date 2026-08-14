@@ -48,7 +48,7 @@ const state = {
   marker: null,
   radarCircle: null,
   radarLayer: null,
-  radarVisible: true,
+  radarVisible: false,
   weatherData: null,
   aqiData: null
 };
@@ -647,10 +647,13 @@ function setupEvents() {
     initIcons();
   });
 
-  el.btnRadarToggle.addEventListener('click', () => {
+  el.btnRadarToggle.addEventListener('click', async () => {
     state.radarVisible = !state.radarVisible;
     if (state.radarVisible) {
       el.btnRadarToggle.classList.add('active');
+      if (!state.radarLayer) {
+        await loadRadarOverlay();
+      }
       if (state.radarLayer) state.radarLayer.addTo(state.map);
     } else {
       el.btnRadarToggle.classList.remove('active');
