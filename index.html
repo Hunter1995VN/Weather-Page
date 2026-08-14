@@ -3,234 +3,390 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SkyPulse Weather - Dashboard thời tiết trực quan</title>
+  <title>AETHER — Spatial Atmospheric Weather Studio</title>
   
   <!-- SEO & Meta -->
-  <meta name="description" content="Ứng dụng dự báo thời tiết thời gian thực theo vị trí địa lý của bạn, tích hợp bản đồ định vị chính xác." />
-  <meta name="theme-color" content="#0b0f19" />
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <meta http-equiv="Pragma" content="no-cache" />
-  <meta http-equiv="Expires" content="0" />
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌤️</text></svg>" />
+  <meta name="description" content="Nền tảng dự báo thời tiết không gian và bản đồ radar trực quan thế hệ mới." />
+  <meta name="theme-color" content="#07090e" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>" />
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   
   <!-- Custom Style -->
-  <link rel="stylesheet" href="./src/style.css?v=4.2.0" />
+  <link rel="stylesheet" href="./src/style.css?v=5.0.0" />
 </head>
-<body class="theme-default">
-  <div id="app" class="app-container">
-    
-    <!-- Dynamic Background Glow Blobs -->
-    <div class="bg-glow bg-glow-1"></div>
-    <div class="bg-glow bg-glow-2"></div>
+<body class="theme-night">
+  <!-- Dynamic Atmospheric Background -->
+  <div class="sky-canvas">
+    <div class="ambient-mesh ambient-primary"></div>
+    <div class="ambient-mesh ambient-secondary"></div>
+    <div class="ambient-mesh ambient-tertiary"></div>
+    <div class="weather-particles" id="weatherParticles"></div>
+  </div>
 
-    <!-- Header Navigation & Search -->
-    <header class="app-header">
-      <div class="brand">
-        <div class="brand-icon">🌤️</div>
-        <div class="brand-text">
-          <h1>SkyPulse</h1>
-          <span class="badge">Live GPS Weather</span>
+  <div id="app" class="app-shell">
+    
+    <!-- Top Navigation Header -->
+    <header class="studio-header">
+      <div class="header-left">
+        <div class="brand-badge">
+          <div class="brand-logo">
+            <span class="logo-glyph">⚡</span>
+          </div>
+          <div class="brand-meta">
+            <div class="brand-title">AETHER</div>
+            <div class="live-beacon">
+              <span class="beacon-pulse"></span>
+              <span class="beacon-text">LIVE TELEMETRY</span>
+            </div>
+          </div>
         </div>
+
+        <!-- Quick Favorite Cities Chips -->
+        <nav class="quick-cities" id="quickCities" aria-label="Thành phố nhanh">
+          <button class="city-chip active" data-city="Đà Nẵng" data-lat="16.0544" data-lon="108.2022">Đà Nẵng</button>
+          <button class="city-chip" data-city="Hà Nội" data-lat="21.0285" data-lon="105.8542">Hà Nội</button>
+          <button class="city-chip" data-city="TP. Hồ Chí Minh" data-lat="10.8231" data-lon="106.6297">TP.HCM</button>
+          <button class="city-chip" data-city="Tokyo" data-lat="35.6762" data-lon="139.6503">Tokyo</button>
+          <button class="city-chip" data-city="Paris" data-lat="48.8566" data-lon="2.3522">Paris</button>
+          <button class="city-chip" data-city="New York" data-lat="40.7128" data-lon="-74.0060">New York</button>
+        </nav>
       </div>
 
-      <div class="search-box">
-        <div class="search-input-wrapper">
-          <i data-lucide="search" class="search-icon"></i>
+      <!-- Search & Controls -->
+      <div class="header-right">
+        <div class="search-command-bar">
+          <i data-lucide="search" class="search-ico"></i>
           <input type="text" id="citySearch" placeholder="Tìm kiếm Phường, Xã, Quận, Thành phố..." autocomplete="off" />
-          <button id="clearSearch" class="clear-btn hidden" aria-label="Xóa">
+          <button id="clearSearch" class="clear-search-btn hidden" aria-label="Xóa tìm kiếm">
             <i data-lucide="x"></i>
           </button>
+          <div id="searchSuggestions" class="search-dropdown hidden"></div>
         </div>
-        <div id="searchSuggestions" class="search-suggestions hidden"></div>
-      </div>
 
-      <div class="actions">
-        <button id="btnGeo" class="btn btn-primary" title="Lấy thời tiết theo vị trí GPS của bạn">
-          <i data-lucide="locate"></i>
-          <span>Vị trí của tôi</span>
-        </button>
-        <button id="btnRefresh" class="btn btn-icon" title="Làm mới dữ liệu">
-          <i data-lucide="refresh-cw"></i>
-        </button>
+        <div class="control-actions">
+          <!-- Unit Switcher °C / °F -->
+          <div class="unit-switch" id="unitSwitch" title="Chuyển đổi °C / °F">
+            <button class="unit-btn active" data-unit="C">°C</button>
+            <button class="unit-btn" data-unit="F">°F</button>
+          </div>
+
+          <!-- GPS Location Button -->
+          <button id="btnGeo" class="action-btn action-geo" title="Định vị GPS chính xác của bạn">
+            <i data-lucide="crosshair"></i>
+            <span>Vị trí của tôi</span>
+          </button>
+
+          <!-- Refresh Button -->
+          <button id="btnRefresh" class="action-btn action-icon" title="Làm mới dữ liệu thời tiết">
+            <i data-lucide="refresh-cw"></i>
+          </button>
+        </div>
       </div>
     </header>
 
-    <!-- Main Content Layout -->
-    <main class="app-main">
+    <!-- Main Studio Grid -->
+    <main class="studio-content">
       
       <!-- Loading Overlay -->
-      <div id="loader" class="loader-overlay hidden">
-        <div class="spinner"></div>
-        <p id="loaderText">Đang xác định vị trí & tải dữ liệu thời tiết...</p>
+      <div id="loader" class="glass-loader hidden">
+        <div class="pulse-spinner">
+          <div class="ring ring-1"></div>
+          <div class="ring ring-2"></div>
+          <div class="core-dot"></div>
+        </div>
+        <p id="loaderText" class="loader-caption">Đang đồng bộ dữ liệu vệ tinh & khí tượng...</p>
       </div>
 
-      <!-- Dashboard Grid (Vừa khít màn hình 100% Zoom) -->
-      <div class="dashboard-grid">
-
-        <!-- Left Column: Hero Weather & 24h Forecast -->
-        <section class="column-left">
-          
-          <!-- Hero Card: Current Weather -->
-          <div class="card card-hero">
-            <div class="hero-header">
-              <div class="location-info">
-                <h2 id="locationName">Đang định vị...</h2>
-                <p id="locationSub">Đang quét tọa độ GPS...</p>
+      <!-- Row 1: Hero Weather & Spatial Radar Map -->
+      <div class="layout-row row-hero">
+        
+        <!-- Left: Hero Weather Studio -->
+        <section class="panel panel-hero" id="heroPanel">
+          <div class="hero-top">
+            <div class="location-cluster">
+              <div class="location-eyebrow" id="locationSub">
+                <i data-lucide="map-pin"></i>
+                <span>Đang quét tọa độ GPS...</span>
               </div>
-              <div class="live-time" id="currentTime">--:--</div>
+              <h1 class="location-headline" id="locationName">Đang định vị...</h1>
+            </div>
+            
+            <div class="hero-live-clock">
+              <span class="clock-digit" id="currentTime">--:--</span>
+              <span class="clock-label">LIVE ICT</span>
+            </div>
+          </div>
+
+          <div class="hero-middle">
+            <div class="temp-readout">
+              <div class="temp-val-display" id="currentTemp">--</div>
+              <div class="temp-deg-unit" id="unitDisplay">°C</div>
             </div>
 
-            <div class="hero-body">
-              <div class="temp-container">
-                <div class="main-temp" id="currentTemp">--°</div>
-                <div class="temp-unit">C</div>
+            <div class="weather-visual-pill">
+              <div class="weather-icon-sphere" id="weatherIcon">🌤️</div>
+              <div class="weather-condition-group">
+                <span class="condition-headline" id="weatherDesc">Đang cập nhật...</span>
+                <span class="feels-like-tag" id="feelsLike">Cảm giác như --°C</span>
               </div>
-              <div class="weather-status">
-                <div class="weather-icon-large" id="weatherIcon">🌤️</div>
-                <div class="status-details">
-                  <span class="status-text" id="weatherDesc">Đang cập nhật...</span>
-                  <span class="feels-like" id="feelsLike">Cảm giác như --°C</span>
+            </div>
+          </div>
+
+          <div class="hero-bottom-bar">
+            <div class="stat-capsule">
+              <div class="capsule-icon text-cyan"><i data-lucide="arrow-down"></i></div>
+              <div class="capsule-info">
+                <span class="cap-lbl">Thấp nhất</span>
+                <span class="cap-val" id="tempMin">--°</span>
+              </div>
+            </div>
+
+            <div class="stat-capsule">
+              <div class="capsule-icon text-rose"><i data-lucide="arrow-up"></i></div>
+              <div class="capsule-info">
+                <span class="cap-lbl">Cao nhất</span>
+                <span class="cap-val" id="tempMax">--°</span>
+              </div>
+            </div>
+
+            <div class="stat-capsule">
+              <div class="capsule-icon text-amber"><i data-lucide="sun-medium"></i></div>
+              <div class="capsule-info">
+                <span class="cap-lbl">Bức xạ UV</span>
+                <span class="cap-val" id="heroUv">--</span>
+              </div>
+            </div>
+
+            <div class="stat-capsule">
+              <div class="capsule-icon text-emerald"><i data-lucide="activity"></i></div>
+              <div class="capsule-info">
+                <span class="cap-lbl">Không khí</span>
+                <span class="cap-val" id="heroAqi">-- AQI</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Right: Spatial Radar & Satellite Map -->
+        <section class="panel panel-map">
+          <div class="panel-header map-header">
+            <div class="header-title">
+              <i data-lucide="layers"></i>
+              <span>Bản đồ Khí tượng & Định vị Không gian</span>
+            </div>
+            
+            <div class="map-layer-toggles">
+              <button class="layer-tab active" data-layer="dark" title="Bản đồ đêm">Đêm</button>
+              <button class="layer-tab" data-layer="satellite" title="Ảnh vệ tinh HD">Vệ tinh</button>
+              <button class="layer-tab" data-layer="street" title="Bản đồ đường phố">Chi tiết</button>
+              <button id="btnRecenter" class="layer-tab btn-recenter-icon" title="Căn lại vị trí trung tâm">
+                <i data-lucide="locate-fixed"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="map-viewport">
+            <div id="map"></div>
+            <div class="map-hud-overlay">
+              <span class="hud-item" id="mapCoords">📍 Vị trí: Đang xác định...</span>
+              <span class="hud-item hud-hint">💡 Nhấp bất kỳ đâu để xem thời tiết</span>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- Row 2: 24-Hour Interactive Wave Forecast -->
+      <section class="panel panel-hourly">
+        <div class="panel-header">
+          <div class="header-title">
+            <i data-lucide="clock"></i>
+            <span>Dự báo 24 giờ tới (Biểu đồ & Xu hướng nhiệt)</span>
+          </div>
+          <div class="hourly-legend">
+            <span class="legend-item"><span class="legend-dot dot-temp"></span> Nhiệt độ (°C)</span>
+            <span class="legend-item"><span class="legend-dot dot-rain"></span> Xác suất mưa (%)</span>
+          </div>
+        </div>
+
+        <div class="hourly-scroller" id="hourlyForecast">
+          <!-- Rendered via JS -->
+        </div>
+      </section>
+
+      <!-- Row 3: 7-Day Forecast & Advanced Telemetry Grid -->
+      <div class="layout-row row-details">
+        
+        <!-- Left: 7-Day Spectrum Bar Forecast -->
+        <section class="panel panel-daily">
+          <div class="panel-header">
+            <div class="header-title">
+              <i data-lucide="calendar"></i>
+              <span>Dự báo 7 ngày tới</span>
+            </div>
+            <span class="sub-caption">Biên độ dao động nhiệt</span>
+          </div>
+
+          <div class="daily-stream" id="dailyForecast">
+            <!-- Rendered via JS with Dynamic Temp Spectrum Range -->
+          </div>
+        </section>
+
+        <!-- Right: 6-Telemetry Analytics Grid -->
+        <section class="telemetry-grid">
+          
+          <!-- Widget 1: Wind Telemetry & Live Compass -->
+          <div class="panel widget-panel">
+            <div class="widget-head">
+              <div class="widget-title"><i data-lucide="wind" class="text-cyan"></i> Gió & Hướng thổi</div>
+              <span class="widget-pill" id="windDirText">--</span>
+            </div>
+            <div class="widget-body wind-body">
+              <div class="compass-dial">
+                <div class="compass-ring">
+                  <span class="cp-label cp-n">B</span>
+                  <span class="cp-label cp-e">Đ</span>
+                  <span class="cp-label cp-s">N</span>
+                  <span class="cp-label cp-w">T</span>
+                  <div class="compass-needle" id="compassNeedle">
+                    <div class="needle-tip"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="widget-numeric-col">
+                <div class="numeric-val"><span id="windSpeed">--</span> <small id="windSpeedUnit">km/h</small></div>
+                <div class="numeric-sub" id="windGust">Gió giật: -- km/h</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Widget 2: UV Radiant Gauge -->
+          <div class="panel widget-panel">
+            <div class="widget-head">
+              <div class="widget-title"><i data-lucide="sun" class="text-amber"></i> Chỉ số Tia cực tím (UV)</div>
+              <span class="widget-pill" id="uvCatPill">Thấp</span>
+            </div>
+            <div class="widget-body gauge-body">
+              <div class="numeric-val"><span id="uvVal">--</span> <small class="text-muted">/ 11+</small></div>
+              <div class="gauge-track">
+                <div class="gauge-fill" id="uvGaugeFill"></div>
+              </div>
+              <div class="numeric-sub" id="uvAdvice">Bảo vệ da an toàn</div>
+            </div>
+          </div>
+
+          <!-- Widget 3: Sun & Moon Astral Arc Tracker -->
+          <div class="panel widget-panel">
+            <div class="widget-head">
+              <div class="widget-title"><i data-lucide="sun-dim" class="text-amber"></i> Quỹ đạo Mặt trời</div>
+              <span class="widget-pill" id="sunPhasePill">Ban ngày</span>
+            </div>
+            <div class="widget-body astral-body">
+              <div class="sun-arc-container">
+                <svg class="sun-arc-svg" viewBox="0 0 200 80">
+                  <path d="M 15 70 A 85 55 0 0 1 185 70" class="sun-arc-bg" />
+                  <path d="M 15 70 A 85 55 0 0 1 185 70" class="sun-arc-progress" id="sunArcProgress" />
+                  <circle cx="15" cy="70" r="7" class="sun-orb" id="sunOrb" />
+                </svg>
+              </div>
+              <div class="astral-timeline">
+                <div class="time-mark">
+                  <span>Bình minh</span>
+                  <strong id="sunriseTime">05:30</strong>
+                </div>
+                <div class="time-mark text-right">
+                  <span>Hoàng hôn</span>
+                  <strong id="sunsetTime">18:15</strong>
                 </div>
               </div>
             </div>
+          </div>
 
-            <div class="hero-footer">
-              <div class="minmax-tag">
-                <i data-lucide="arrow-down" class="text-blue"></i>
-                <span id="tempMin">Thấp: --°</span>
+          <!-- Widget 4: Air Quality (AQI) & PM2.5 / PM10 -->
+          <div class="panel widget-panel">
+            <div class="widget-head">
+              <div class="widget-title"><i data-lucide="shield-check" class="text-emerald"></i> Chất lượng Không khí</div>
+              <span class="widget-pill" id="aqiCatPill">Trong lành</span>
+            </div>
+            <div class="widget-body aqi-body">
+              <div class="aqi-score-row">
+                <div class="numeric-val"><span id="aqiScore">--</span> <small>AQI</small></div>
+                <div class="aqi-health-badge" id="aqiHealthBadge">Tốt</div>
               </div>
-              <div class="minmax-tag">
-                <i data-lucide="arrow-up" class="text-red"></i>
-                <span id="tempMax">Cao: --°</span>
-              </div>
-              <div class="update-tag">
-                <i data-lucide="clock"></i>
-                <span id="lastUpdated">Cập nhật: Mới xong</span>
+              <div class="pollutant-meters">
+                <div class="pollutant-item">
+                  <span>PM2.5: <strong id="pm25Val">-- µg/m³</strong></span>
+                  <div class="micro-bar"><div class="micro-fill bg-emerald" id="pm25Bar"></div></div>
+                </div>
+                <div class="pollutant-item">
+                  <span>PM10: <strong id="pm10Val">-- µg/m³</strong></span>
+                  <div class="micro-bar"><div class="micro-fill bg-emerald" id="pm10Bar"></div></div>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Hourly Forecast Card -->
-          <div class="card card-hourly">
-            <div class="card-header">
-              <h3><i data-lucide="clock-3"></i> Dự báo 24 giờ tới</h3>
+          <!-- Widget 5: Humidity & Dew Point -->
+          <div class="panel widget-panel">
+            <div class="widget-head">
+              <div class="widget-title"><i data-lucide="droplets" class="text-blue"></i> Độ ẩm không khí</div>
+              <span class="widget-pill" id="humidityComfort">Dễ chịu</span>
             </div>
-            <div class="hourly-scroll" id="hourlyForecast">
-              <!-- Rendered via JS -->
+            <div class="widget-body gauge-body">
+              <div class="numeric-val"><span id="humidityVal">--</span> <small>%</small></div>
+              <div class="gauge-track">
+                <div class="gauge-fill bg-blue" id="humidityGaugeFill"></div>
+              </div>
+              <div class="numeric-sub" id="dewPointVal">Điểm sương: --°C</div>
             </div>
           </div>
 
-          <!-- 7-Day Forecast Card -->
-          <div class="card card-daily">
-            <div class="card-header">
-              <h3><i data-lucide="calendar-days"></i> Dự báo 7 ngày tới</h3>
+          <!-- Widget 6: Barometric Pressure & Visibility -->
+          <div class="panel widget-panel">
+            <div class="widget-head">
+              <div class="widget-title"><i data-lucide="gauge" class="text-purple"></i> Khí áp & Tầm nhìn</div>
+              <span class="widget-pill">Ổn định</span>
             </div>
-            <div class="daily-list" id="dailyForecast">
-              <!-- Rendered via JS -->
-            </div>
-          </div>
-
-        </section>
-
-        <!-- Right Column: Interactive Map & Weather Metrics -->
-        <section class="column-right">
-          
-          <!-- Interactive Map Container -->
-          <div class="card card-map">
-            <div class="card-header map-header">
-              <h3><i data-lucide="map-pin"></i> Bản đồ Định vị Vị trí Trực tiếp</h3>
-              <div class="map-controls">
-                <button id="btnRecenter" class="btn btn-icon btn-sm" title="Về vị trí của tôi">
-                  <i data-lucide="crosshair"></i>
-                </button>
+            <div class="widget-body dual-stat-body">
+              <div class="dual-item">
+                <span class="dual-lbl">Áp suất</span>
+                <strong class="dual-val" id="pressureVal">-- hPa</strong>
+              </div>
+              <div class="dual-divider"></div>
+              <div class="dual-item">
+                <span class="dual-lbl">Tầm nhìn</span>
+                <strong class="dual-val" id="visibilityVal">10.0 km</strong>
               </div>
             </div>
-            
-            <div class="map-wrapper">
-              <div id="map"></div>
-              <div class="map-coords-badge" id="mapCoords">Vị trí: Đang xác định...</div>
-            </div>
-          </div>
-
-          <!-- Weather Details Metrics Grid -->
-          <div class="metrics-grid">
-            
-            <div class="card card-metric">
-              <div class="metric-icon bg-blue"><i data-lucide="droplets"></i></div>
-              <div class="metric-content">
-                <span class="metric-label">Độ ẩm</span>
-                <span class="metric-value" id="humidity">--%</span>
-                <span class="metric-sub" id="humiditySub">Điểm sương: --°C</span>
-              </div>
-            </div>
-
-            <div class="card card-metric">
-              <div class="metric-icon bg-cyan"><i data-lucide="wind"></i></div>
-              <div class="metric-content">
-                <span class="metric-label">Gió</span>
-                <span class="metric-value" id="windSpeed">-- km/h</span>
-                <span class="metric-sub" id="windDir">Hướng: --</span>
-              </div>
-            </div>
-
-            <div class="card card-metric">
-              <div class="metric-icon bg-orange"><i data-lucide="sun"></i></div>
-              <div class="metric-content">
-                <span class="metric-label">Chỉ số UV</span>
-                <span class="metric-value" id="uvIndex">--</span>
-                <span class="metric-sub" id="uvStatus">An toàn</span>
-              </div>
-            </div>
-
-            <div class="card card-metric">
-              <div class="metric-icon bg-emerald"><i data-lucide="activity"></i></div>
-              <div class="metric-content">
-                <span class="metric-label">Chất lượng không khí</span>
-                <span class="metric-value" id="aqiIndex">-- AQI</span>
-                <span class="metric-sub" id="aqiStatus">Đang cập nhật...</span>
-              </div>
-            </div>
-
-            <div class="card card-metric">
-              <div class="metric-icon bg-purple"><i data-lucide="gauge"></i></div>
-              <div class="metric-content">
-                <span class="metric-label">Áp suất</span>
-                <span class="metric-value" id="pressure">-- hPa</span>
-                <span class="metric-sub">Bình thường</span>
-              </div>
-            </div>
-
-            <div class="card card-metric">
-              <div class="metric-icon bg-amber"><i data-lucide="eye"></i></div>
-              <div class="metric-content">
-                <span class="metric-label">Tầm nhìn</span>
-                <span class="metric-value" id="visibility">-- km</span>
-                <span class="metric-sub">Rõ ràng</span>
-              </div>
-            </div>
-
           </div>
 
         </section>
 
       </div>
+
     </main>
 
     <!-- Footer -->
-    <footer class="app-footer">
-      <p>Powered by Open-Meteo & Leaflet OpenStreetMap • SkyPulse v4.0 Perfect Release</p>
+    <footer class="studio-footer">
+      <div class="footer-left">
+        <span class="footer-brand">⚡ AETHER Studio v5.0</span>
+        <span class="footer-dot">•</span>
+        <span>High-Precision Meteorological Framework</span>
+      </div>
+      <div class="footer-right">
+        <span>Data: Open-Meteo & Leaflet & CARTO</span>
+      </div>
     </footer>
 
   </div>
 
-  <script type="module" src="./src/main.js?v=4.0.0"></script>
+  <script type="module" src="./src/main.js?v=5.0.0"></script>
 </body>
 </html>
