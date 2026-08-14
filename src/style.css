@@ -665,6 +665,12 @@ body {
   flex-shrink: 0;
 }
 
+@keyframes pulse-ring {
+  0% { transform: scale(0.6); opacity: 0.8; }
+  50% { transform: scale(1.4); opacity: 0.2; }
+  100% { transform: scale(0.6); opacity: 0.8; }
+}
+
 .map-wrapper {
   position: relative;
   width: 100%;

@@ -166,78 +166,84 @@ function getAQICategory(aqi) {
 // Leaflet Map Initialization
 function initMap() {
   if (state.map) return;
+  try {
+    const mapEl = document.getElementById('map');
+    if (!mapEl) return;
 
-  state.map = L.map('map', {
-    center: [state.lat, state.lon],
-    zoom: 13,
-    zoomControl: true
-  });
+    state.map = L.map('map', {
+      center: [state.lat, state.lon],
+      zoom: 13,
+      zoomControl: true
+    });
 
-  // Base Map Layer - CartoDB Voyager Tile Map
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    maxZoom: 19,
-    subdomains: 'abcd',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-  }).addTo(state.map);
+    // Base Map Layer - CartoDB Voyager Tile Map
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19,
+      subdomains: 'abcd',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(state.map);
 
-  // Custom Pin Marker
-  const customIcon = L.divIcon({
-    className: 'custom-leaflet-marker',
-    html: `
-      <div style="position: relative; display: flex; align-items: center; justify-content: center;">
-        <div style="
-          position: absolute;
-          width: 54px;
-          height: 54px;
-          border-radius: 50%;
-          background: rgba(56, 189, 248, 0.4);
-          animation: pulse-ring 2s infinite ease-out;
-        "></div>
-        <div style="
-          width: 38px;
-          height: 38px;
-          background: linear-gradient(135deg, #0284c7, #38bdf8);
-          border: 3px solid #ffffff;
-          border-radius: 50%;
-          box-shadow: 0 0 20px rgba(56, 189, 248, 0.9), 0 4px 10px rgba(0,0,0,0.5);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 20px;
-          position: relative;
-          z-index: 2;
-        ">📍</div>
-      </div>
-    `,
-    iconSize: [38, 38],
-    iconAnchor: [19, 19]
-  });
+    // Custom Pin Marker
+    const customIcon = L.divIcon({
+      className: 'custom-leaflet-marker',
+      html: `
+        <div style="position: relative; display: flex; align-items: center; justify-content: center;">
+          <div style="
+            position: absolute;
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            background: rgba(56, 189, 248, 0.4);
+            animation: pulse-ring 2s infinite ease-out;
+          "></div>
+          <div style="
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, #0284c7, #38bdf8);
+            border: 3px solid #ffffff;
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.9), 0 4px 10px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            position: relative;
+            z-index: 2;
+          ">📍</div>
+        </div>
+      `,
+      iconSize: [38, 38],
+      iconAnchor: [19, 19]
+    });
 
-  state.marker = L.marker([state.lat, state.lon], { icon: customIcon }).addTo(state.map);
+    state.marker = L.marker([state.lat, state.lon], { icon: customIcon }).addTo(state.map);
 
-  // Accuracy Circle
-  state.radarCircle = L.circle([state.lat, state.lon], {
-    radius: 1200,
-    color: '#38bdf8',
-    fillColor: '#38bdf8',
-    fillOpacity: 0.12,
-    weight: 2,
-    dashArray: '6, 8'
-  }).addTo(state.map);
+    // Accuracy Circle
+    state.radarCircle = L.circle([state.lat, state.lon], {
+      radius: 1200,
+      color: '#38bdf8',
+      fillColor: '#38bdf8',
+      fillOpacity: 0.12,
+      weight: 2,
+      dashArray: '6, 8'
+    }).addTo(state.map);
 
-  // Load RainViewer Radar Overlay
-  loadRadarOverlay();
+    // Load RainViewer Radar Overlay
+    loadRadarOverlay();
 
-  // Click Event on Map
-  state.map.on('click', (e) => {
-    const { lat, lng } = e.latlng;
-    fetchWeatherForCoords(lat, lng, false);
-  });
+    // Click Event on Map
+    state.map.on('click', (e) => {
+      const { lat, lng } = e.latlng;
+      fetchWeatherForCoords(lat, lng, false);
+    });
 
-  // Force map to recalculate container size
-  setTimeout(() => {
-    state.map.invalidateSize();
-  }, 300);
+    // Force map to recalculate container size
+    setTimeout(() => {
+      if (state.map) state.map.invalidateSize();
+    }, 300);
+  } catch (err) {
+    console.warn('Map initialization caught error:', err);
+  }
 }
 
 // Fetch RainViewer Live Weather Radar Overlay
