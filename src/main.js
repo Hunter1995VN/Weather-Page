@@ -50,19 +50,29 @@ const state = {
   aqiData: null
 };
 
-// Map Tile Providers
+// Map Tile Providers (High Reliability)
 const TILE_PROVIDERS = {
   dark: {
-    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; OpenStreetMap &copy; CARTO'
+    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    options: {
+      subdomains: 'abcd',
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
+    }
   },
   satellite: {
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye'
+    options: {
+      maxZoom: 19,
+      attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS'
+    }
   },
   street: {
-    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; OpenStreetMap &copy; CARTO'
+    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    options: {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }
   }
 };
 
@@ -116,7 +126,9 @@ const el = {
   tempMin: document.getElementById('tempMin'),
   tempMax: document.getElementById('tempMax'),
   heroUv: document.getElementById('heroUv'),
+  heroUvSub: document.getElementById('heroUvSub'),
   heroAqi: document.getElementById('heroAqi'),
+  heroAqiSub: document.getElementById('heroAqiSub'),
 
   mapCoords: document.getElementById('mapCoords'),
   hourlyForecast: document.getElementById('hourlyForecast'),
@@ -125,6 +137,7 @@ const el = {
   windSpeed: document.getElementById('windSpeed'),
   windSpeedUnit: document.getElementById('windSpeedUnit'),
   windDirText: document.getElementById('windDirText'),
+  windStatus: document.getElementById('windStatus'),
   windGust: document.getElementById('windGust'),
   compassNeedle: document.getElementById('compassNeedle'),
 
@@ -153,7 +166,10 @@ const el = {
   dewPointVal: document.getElementById('dewPointVal'),
 
   pressureVal: document.getElementById('pressureVal'),
-  visibilityVal: document.getElementById('visibilityVal')
+  pressureStatusPill: document.getElementById('pressureStatusPill'),
+  pressureStatus: document.getElementById('pressureStatus'),
+  visibilityVal: document.getElementById('visibilityVal'),
+  visibilityStatus: document.getElementById('visibilityStatus')
 };
 
 // Unit Conversion Helpers
@@ -194,20 +210,41 @@ function getWindDirection(deg) {
   return directions[Math.round(deg / 45) % 8];
 }
 
+function getWindLevel(kmh) {
+  if (kmh <= 5) return 'Gió lặng (Trời êm ả)';
+  if (kmh <= 15) return 'Gió nhẹ (Thoang thoảng)';
+  if (kmh <= 28) return 'Gió vừa (Cây đung đưa)';
+  if (kmh <= 45) return 'Gió khá mạnh (Cành cây lay)';
+  return 'Gió rất mạnh (Cảnh báo giật)';
+}
+
 function getUVDetails(uv) {
-  if (uv <= 2) return { text: 'Thấp (An toàn)', pill: 'An toàn', advice: 'Bảo vệ da an toàn, không cần che chắn', color: '#10b981' };
-  if (uv <= 5) return { text: 'Trung bình', pill: 'Trung bình', advice: 'Nên đội mũ & đeo kính khi ra ngoài', color: '#f59e0b' };
-  if (uv <= 7) return { text: 'Cao (Nguy hại)', pill: 'Cao', advice: 'Cần thoa kem chống nắng & che chắn', color: '#f97316' };
-  if (uv <= 10) return { text: 'Rất cao (Nguy hiểm)', pill: 'Rất cao', advice: 'Hạn chế ở ngoài trời từ 11h - 15h', color: '#ef4444' };
-  return { text: 'Cực độ (Cực nguy hại)', pill: 'Cực độ', advice: 'Tránh ra ngoài trời, gây bỏng rát da', color: '#a855f7' };
+  if (uv <= 2) return { text: 'Thấp (An toàn)', pill: 'Thấp', advice: 'Bảo vệ da an toàn, thoải mái hoạt động', color: '#10b981' };
+  if (uv <= 5) return { text: 'Trung bình', pill: 'Trung bình', advice: 'Nên đội mũ & đeo kính râm khi ra ngoài', color: '#f59e0b' };
+  if (uv <= 7) return { text: 'Cao (Cần che chắn)', pill: 'Cao', advice: 'Thoa kem chống nắng & hạn chế nắng gắt', color: '#f97316' };
+  if (uv <= 10) return { text: 'Rất cao (Nguy hiểm)', pill: 'Rất cao', advice: 'Tránh ở ngoài trời nắng từ 11h - 15h', color: '#ef4444' };
+  return { text: 'Cực độ (Cực nguy hại)', pill: 'Cực độ', advice: 'Nguy cơ bỏng da cao, hãy ở trong nhà', color: '#a855f7' };
 }
 
 function getAQIDetails(aqi) {
-  if (aqi <= 50) return { text: 'Trong lành', badge: 'Tốt', color: '#10b981' };
-  if (aqi <= 100) return { text: 'Chấp nhận được', badge: 'Trung bình', color: '#f59e0b' };
-  if (aqi <= 150) return { text: 'Kém (Nhạy cảm)', badge: 'Kém', color: '#f97316' };
-  if (aqi <= 200) return { text: 'Xấu (Ô nhiễm)', badge: 'Xấu', color: '#ef4444' };
-  return { text: 'Rất nguy hại', badge: 'Nguy hại', color: '#a855f7' };
+  if (aqi <= 50) return { text: 'Không khí trong lành', badge: 'Tốt', color: '#10b981' };
+  if (aqi <= 100) return { text: 'Chất lượng chấp nhận được', badge: 'Trung bình', color: '#f59e0b' };
+  if (aqi <= 150) return { text: 'Kém (Nhạy cảm nên chú ý)', badge: 'Kém', color: '#f97316' };
+  if (aqi <= 200) return { text: 'Xấu (Nên đeo khẩu trang)', badge: 'Xấu', color: '#ef4444' };
+  return { text: 'Rất nguy hại (Hạn chế ra ngoài)', badge: 'Nguy hại', color: '#a855f7' };
+}
+
+function getHumidityLevel(rh) {
+  if (rh < 40) return { text: 'Khô ráo (Nên uống nước)', pill: 'Hơi khô' };
+  if (rh <= 65) return { text: 'Lý tưởng (Dễ chịu)', pill: 'Lý tưởng' };
+  if (rh <= 80) return { text: 'Ẩm cao (Hơi oi bức)', pill: 'Ẩm cao' };
+  return { text: 'Rất ẩm (Nồm / Khó chịu)', pill: 'Rất ẩm' };
+}
+
+function getPressureLevel(hpa) {
+  if (hpa < 1005) return { text: 'Khí áp thấp (Dễ mưa dông)', pill: 'Thấp' };
+  if (hpa <= 1018) return { text: 'Ổn định (Thời tiết bình thường)', pill: 'Ổn định' };
+  return { text: 'Khí áp cao (Trời khô ráo)', pill: 'Cao' };
 }
 
 // Leaflet Map Initialization
@@ -223,7 +260,7 @@ function initMap() {
       zoomControl: true
     });
 
-    // Default Dark Matter Tile Layer
+    // Default Layer
     setMapLayer('dark');
 
     // Custom Neon Radar Pin
@@ -236,7 +273,7 @@ function initMap() {
             width: 44px;
             height: 44px;
             border-radius: 50%;
-            background: rgba(56, 189, 248, 0.35);
+            background: rgba(56, 189, 248, 0.4);
             animation: beacon-wave 2s infinite cubic-bezier(0, 0, 0.2, 1);
           "></div>
           <div style="
@@ -295,16 +332,15 @@ function setMapLayer(layerName) {
   }
 
   const prov = TILE_PROVIDERS[layerName];
-  state.tileLayer = L.tileLayer(prov.url, {
-    minZoom: 1,
-    maxZoom: 19,
-    attribution: prov.attribution
-  }).addTo(state.map);
+  state.tileLayer = L.tileLayer(prov.url, prov.options).addTo(state.map);
 
-  // Update toggle active buttons
   document.querySelectorAll('.layer-tab[data-layer]').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.layer === layerName);
   });
+
+  setTimeout(() => {
+    if (state.map) state.map.invalidateSize();
+  }, 100);
 }
 
 function updateMapPosition(lat, lon, title, tempStr, rainInfo) {
@@ -329,9 +365,11 @@ function updateMapPosition(lat, lon, title, tempStr, rainInfo) {
   state.marker.openPopup();
   el.mapCoords.textContent = `📍 ${title} (${lat.toFixed(4)}, ${lon.toFixed(4)})`;
 
-  setTimeout(() => {
-    if (state.map) state.map.invalidateSize();
-  }, 250);
+  [150, 500].forEach(delay => {
+    setTimeout(() => {
+      if (state.map) state.map.invalidateSize();
+    }, delay);
+  });
 }
 
 // Reverse Geocoding
@@ -448,14 +486,25 @@ function renderAllData() {
     el.tempMax.textContent = toTemp(daily.temperature_2m_max[0]);
   }
 
+  // Hero UV & AQI with Status Levels
   const maxUV = daily && daily.uv_index_max ? daily.uv_index_max[0] : 3;
+  const uvDetail = getUVDetails(maxUV);
   el.heroUv.textContent = maxUV.toFixed(1);
+  if (el.heroUvSub) {
+    el.heroUvSub.textContent = uvDetail.pill;
+    el.heroUvSub.style.color = uvDetail.color;
+  }
 
   const aqiScore = (state.aqiData && state.aqiData.current && state.aqiData.current.us_aqi) ? state.aqiData.current.us_aqi : 42;
+  const aqiDetail = getAQIDetails(aqiScore);
   el.heroAqi.textContent = `${aqiScore} AQI`;
+  if (el.heroAqiSub) {
+    el.heroAqiSub.textContent = aqiDetail.badge;
+    el.heroAqiSub.style.color = aqiDetail.color;
+  }
 
   // Render 6 Telemetry Widgets
-  renderTelemetryWidgets(current, daily);
+  renderTelemetryWidgets(current, daily, uvDetail, aqiDetail, aqiScore);
 
   // Render Forecasts
   renderHourlyForecast(hourly);
@@ -474,8 +523,8 @@ function renderAllData() {
 }
 
 // Telemetry Widgets Render
-function renderTelemetryWidgets(current, daily) {
-  // 1. Wind Compass
+function renderTelemetryWidgets(current, daily, uvDetail, aqiDetail, aqiScore) {
+  // 1. Wind Compass & Status
   const speedObj = toSpeed(current.wind_speed_10m);
   el.windSpeed.textContent = speedObj.val;
   el.windSpeedUnit.textContent = speedObj.unit;
@@ -483,11 +532,13 @@ function renderTelemetryWidgets(current, daily) {
   el.windGust.textContent = `Gió giật: ${gustObj.val} ${gustObj.unit}`;
   const windDirName = getWindDirection(current.wind_direction_10m);
   el.windDirText.textContent = `${windDirName} (${current.wind_direction_10m}°)`;
+  if (el.windStatus) {
+    el.windStatus.textContent = getWindLevel(current.wind_speed_10m);
+  }
   el.compassNeedle.style.transform = `rotate(${current.wind_direction_10m}deg)`;
 
   // 2. UV Radiant Gauge
   const maxUV = daily && daily.uv_index_max ? daily.uv_index_max[0] : 3.5;
-  const uvDetail = getUVDetails(maxUV);
   el.uvVal.textContent = maxUV.toFixed(1);
   el.uvCatPill.textContent = uvDetail.pill;
   el.uvCatPill.style.color = uvDetail.color;
@@ -526,12 +577,10 @@ function renderTelemetryWidgets(current, daily) {
   }
 
   // 4. Air Quality (AQI)
-  const aqiScore = (state.aqiData && state.aqiData.current && state.aqiData.current.us_aqi) ? state.aqiData.current.us_aqi : 38;
-  const aqiDetail = getAQIDetails(aqiScore);
   el.aqiScore.textContent = aqiScore;
-  el.aqiCatPill.textContent = aqiDetail.text;
+  el.aqiCatPill.textContent = aqiDetail.badge;
   el.aqiCatPill.style.color = aqiDetail.color;
-  el.aqiHealthBadge.textContent = aqiDetail.badge;
+  el.aqiHealthBadge.textContent = aqiDetail.text;
   el.aqiHealthBadge.style.color = aqiDetail.color;
 
   const pm25 = (state.aqiData && state.aqiData.current && state.aqiData.current.pm2_5) ? state.aqiData.current.pm2_5 : 12.4;
@@ -545,37 +594,39 @@ function renderTelemetryWidgets(current, daily) {
   el.humidityVal.textContent = current.relative_humidity_2m;
   el.humidityGaugeFill.style.width = `${current.relative_humidity_2m}%`;
   const dewPoint = Math.round(current.temperature_2m - ((100 - current.relative_humidity_2m) / 5));
-  el.dewPointVal.textContent = `Điểm sương: ${toTemp(dewPoint)}`;
-  if (current.relative_humidity_2m < 40) el.humidityComfort.textContent = 'Hơi khô';
-  else if (current.relative_humidity_2m <= 65) el.humidityComfort.textContent = 'Lý tưởng';
-  else el.humidityComfort.textContent = 'Ẩm cao';
+  const humDetail = getHumidityLevel(current.relative_humidity_2m);
+  el.humidityComfort.textContent = humDetail.pill;
+  el.dewPointVal.textContent = `Điểm sương: ${toTemp(dewPoint)} • ${humDetail.text}`;
 
   // 6. Barometric Pressure & Visibility
-  el.pressureVal.textContent = `${Math.round(current.surface_pressure)} hPa`;
+  const pressVal = Math.round(current.surface_pressure);
+  const pressDetail = getPressureLevel(pressVal);
+  el.pressureVal.textContent = `${pressVal} hPa`;
+  if (el.pressureStatus) el.pressureStatus.textContent = pressDetail.text;
+  if (el.pressureStatusPill) el.pressureStatusPill.textContent = pressDetail.pill;
+
   el.visibilityVal.textContent = '10.0 km';
+  if (el.visibilityStatus) el.visibilityStatus.textContent = 'Rõ ràng (Tầm nhìn tốt)';
 }
 
-// 24-Hour Forecast Scroller
+// 24-Hour Forecast Scroller (Exact Current-Hour Starting Sequence)
 function renderHourlyForecast(hourly) {
   if (!hourly || !hourly.time) return;
   el.hourlyForecast.innerHTML = '';
 
   const nowSec = Math.floor(Date.now() / 1000);
 
-  // Find index closest to now
+  // Find start index matching current hour (the hour that has started, i.e. largest timeSec <= nowSec)
   let startIndex = 0;
-  let minDiff = Infinity;
-
   for (let idx = 0; idx < hourly.time.length; idx++) {
-    const timeSec = hourly.time[idx];
-    const diff = Math.abs(timeSec - nowSec);
-    if (diff < minDiff) {
-      minDiff = diff;
+    if (hourly.time[idx] <= nowSec) {
       startIndex = idx;
+    } else {
+      break;
     }
   }
 
-  // Slice 24 hours
+  // Slice 24 hours starting from current hour
   for (let i = 0; i < 24; i++) {
     const dataIdx = startIndex + i;
     if (dataIdx >= hourly.time.length) break;

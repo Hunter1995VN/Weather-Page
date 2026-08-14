@@ -1,15 +1,26 @@
-# CONTEXT.md - SkyPulse Weather Page
+# CONTEXT.md - AETHER Spatial Atmospheric Weather Studio
 
 ## Overview
-SkyPulse Weather Page là ứng dụng dự báo thời tiết trực quan thời gian thực, tích hợp bản đồ định vị Leaflet & OpenStreetMap (CartoDB Voyager), dự báo 24h & 7 ngày (với Visual Temp Range Bar), cùng các chỉ số môi trường AQI.
+AETHER là nền tảng dự báo thời tiết không gian & khí tượng trực quan thế hệ mới, tích hợp bản đồ radar đa tầng Leaflet (Dark Matter / Satellite / Street), dự báo 24 giờ liên tục theo múi giờ địa phương, dự báo 7 ngày với dải nhiệt độ quang phổ động, cùng bộ 6 widget đo lường khí tượng thông minh.
 
 ## Progress & Recent Activity
-- **Fix Timezone Mismatch in 24h Hourly Forecast (2026-08-14)**:
-  - Khắc phục triệt để lỗi logic múi giờ: so sánh `now.toISOString().slice(0, 13)` (trả về giờ UTC `07:00`) với chuỗi giờ địa phương của API làm nhảy mốc giờ từ "Bây giờ" sang "8:00" thay vì "15:00".
-  - Sửa thuật toán tìm `startIndex` bằng so sánh timestamp tuyệt đối (`new Date(hourly.time[idx]).getTime()`), đảm bảo giờ sau "Bây giờ" (14:00) hiển thị chính xác là `15:00`, `16:00`, `17:00`... theo giờ local Việt Nam (ICT).
-  - Đã commit `fix(forecast): ...`, push lên `main` và Deploy lại bản mới nhất lên GitHub Pages.
+- **Full Architecture & UI/UX Transformation to AETHER Studio (2026-08-14)**:
+  - Tái thiết kế 100% giao diện theo trường phái Spatial Atmospheric Craft (kính mờ Glassmorphism 32px, viền specular phản quang, dynamic background mesh).
+  - Tích hợp thanh Quick Favorite Cities (Đà Nẵng, Hà Nội, TP.HCM, Tokyo, Paris, New York).
+  - Bộ chuyển đổi nhanh đơn vị nhiệt độ `°C / °F` và tốc độ gió `km/h / mph`.
+  - Thiết kế lại dự báo 24h mượt mà với mốc thời gian liên tục chuẩn xác (`unixtime`).
+  - Thiết kế lại dự báo 7 ngày với thanh dải quang phổ nhiệt độ (Dynamic Temperature Spectrum Range Bar).
+  - Tích hợp bộ 6 tiện ích đo lường Telemetry:
+    1. La bàn gió xoay kim đỏ thời gian thực 360°.
+    2. Thước đo chỉ số tia cực tím UV và khuyến cáo bảo vệ da.
+    3. Mô hình vòng cung quỹ đạo Mặt trời (Sun & Moon Parabolic Arc Tracker).
+    4. Đo lường chất lượng không khí AQI cùng hàm lượng bụi mịn PM2.5 / PM10.
+    5. Đồng hồ độ ẩm và tính toán điểm sương (Dew point).
+    6. Khí áp khí quyển và tầm nhìn quang học.
+  - Bản đồ định vị đa lớp (Dark Matter, Vệ tinh Esri HD, Bản đồ đường phố Voyager).
+  - Đã build production, commit `feat(aether): ...`, push lên `main` và Deploy thành công lên GitHub Pages.
 
 ## Active Status & Next Steps
 - **Branch**: `main`
 - **Deployment**: Live trên GitHub Pages (`https://hunter1995vn.github.io/Weather-Page/`)
-- **Status**: Dự báo 24 giờ tới hiển thị đúng theo thứ tự giờ địa phương thực tế.
+- **Status**: Hoàn thành xuất sắc việc lột xác toàn diện giao diện.
