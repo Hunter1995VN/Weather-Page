@@ -19,8 +19,8 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   
   <!-- Custom Style -->
-  <script type="module" crossorigin src="/Weather-Page/assets/index-B2w9J6PG.js"></script>
-  <link rel="stylesheet" crossorigin href="/Weather-Page/assets/index-D8ZuNHD_.css">
+  <script type="module" crossorigin src="/Weather-Page/assets/index-Cgt5VHwr.js"></script>
+  <link rel="stylesheet" crossorigin href="/Weather-Page/assets/index-BoTBtz9l.css">
 </head>
 <body class="theme-default">
   <div id="app" class="app-container">
@@ -200,10 +200,12 @@
           <!-- Interactive Map Container -->
           <div class="card card-map">
             <div class="card-header map-header">
-              <h3><i data-lucide="map-pin"></i> Vị trí của bạn trên Bản đồ Tương tác</h3>
+              <h3><i data-lucide="map-pin"></i> Bản đồ Định vị & Live Radar Mây Mưa</h3>
               <div class="map-controls">
-                <span class="map-hint"><i data-lucide="mouse-pointer-click"></i> Nhấp vào bản đồ để xem thời tiết</span>
-                <button id="btnRecenter" class="btn btn-icon btn-sm" title="Về vị trí người dùng">
+                <button id="btnRadarToggle" class="btn btn-sm btn-radar active" title="Bật/Tắt Radar Mưa thời gian thực">
+                  <span class="radar-dot"></span> Radar Mưa Live
+                </button>
+                <button id="btnRecenter" class="btn btn-icon btn-sm" title="Về vị trí của tôi">
                   <i data-lucide="crosshair"></i>
                 </button>
               </div>
@@ -211,7 +213,10 @@
             
             <div class="map-wrapper">
               <div id="map"></div>
-              <div class="map-coords-badge" id="mapCoords">Vĩ độ: -- | Kinh độ: --</div>
+              <div class="map-coords-badge" id="mapCoords">Vị trí: Đang xác định...</div>
+            </div>
+            <div class="map-footer-hint">
+              <i data-lucide="mouse-pointer-click"></i> <span>Nhấp vào bất kì vị trí nào trên bản đồ để xem chi tiết thời tiết & cảnh báo mưa khu vực đó.</span>
             </div>
           </div>
 
