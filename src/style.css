@@ -308,8 +308,9 @@ body {
 /* Main Dashboard Grid */
 .dashboard-grid {
   display: grid;
-  grid-template-columns: 1.2fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 24px;
+  align-items: start;
 }
 
 .column-left, .column-right {
@@ -669,6 +670,10 @@ body {
   0% { transform: scale(0.6); opacity: 0.8; }
   50% { transform: scale(1.4); opacity: 0.2; }
   100% { transform: scale(0.6); opacity: 0.8; }
+}
+
+.leaflet-tile {
+  filter: brightness(0.88) contrast(1.08) saturate(0.95);
 }
 
 .map-wrapper {

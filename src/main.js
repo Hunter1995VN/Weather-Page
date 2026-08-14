@@ -176,10 +176,9 @@ function initMap() {
       zoomControl: true
     });
 
-    // Base Map Layer - CartoDB Voyager Tile Map
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    // High-resolution OpenStreetMap Standard Base Tile Layer (No zoom restriction)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
-      subdomains: 'abcd',
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(state.map);
 
