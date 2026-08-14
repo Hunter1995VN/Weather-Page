@@ -20,7 +20,8 @@ import {
   MapPin, 
   MousePointerClick, 
   Crosshair, 
-  CalendarDays 
+  CalendarDays,
+  Layers
 } from 'lucide';
 
 // Initialize Lucide Icons
@@ -28,7 +29,7 @@ function initIcons() {
   createIcons({
     icons: {
       Search, X, Locate, RefreshCw, AlertTriangle, ArrowDown, ArrowUp, Clock, Clock3,
-      Droplets, Wind, Sun, Activity, Gauge, Eye, MapPin, MousePointerClick, Crosshair, CalendarDays
+      Droplets, Wind, Sun, Activity, Gauge, Eye, MapPin, MousePointerClick, Crosshair, CalendarDays, Layers
     }
   });
 }
@@ -41,6 +42,9 @@ const state = {
   locationSub: 'Việt Nam',
   isUserLocation: false,
   map: null,
+  baseTileOsm: null,
+  baseTileSat: null,
+  isSatellite: false,
   marker: null,
   radarCircle: null,
   radarLayer: null,
@@ -89,6 +93,7 @@ const el = {
   btnRefresh: document.getElementById('btnRefresh'),
   btnRecenter: document.getElementById('btnRecenter'),
   btnRadarToggle: document.getElementById('btnRadarToggle'),
+  btnMapStyle: document.getElementById('btnMapStyle'),
 
   locationName: document.getElementById('locationName'),
   locationSub: document.getElementById('locationSub'),
@@ -167,8 +172,8 @@ function getAQICategory(aqi) {
 function initMap() {
   if (state.map) return;
   try {
-    const mapEl = document.getElementById('map');
-    if (!mapEl) return;
+    const mapContainer = document.getElementById('map');
+    if (!mapContainer) return;
 
     state.map = L.map('map', {
       center: [state.lat, state.lon],
@@ -176,13 +181,22 @@ function initMap() {
       zoomControl: true
     });
 
-    // High-resolution OpenStreetMap Standard Base Tile Layer (No zoom restriction)
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // Tile Layer 1: OpenStreetMap Standard (Full street resolution)
+    state.baseTileOsm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-    }).addTo(state.map);
+    });
 
-    // Custom Pin Marker
+    // Tile Layer 2: Esri Satellite World Imagery
+    state.baseTileSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 18,
+      attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+    });
+
+    // Default to OpenStreetMap Standard
+    state.baseTileOsm.addTo(state.map);
+
+    // Custom Pin Marker Icon
     const customIcon = L.divIcon({
       className: 'custom-leaflet-marker',
       html: `
@@ -227,21 +241,20 @@ function initMap() {
       dashArray: '6, 8'
     }).addTo(state.map);
 
-    // Load RainViewer Radar Overlay
+    // Load RainViewer Weather Radar
     loadRadarOverlay();
 
-    // Click Event on Map
+    // Map Click Event
     state.map.on('click', (e) => {
       const { lat, lng } = e.latlng;
       fetchWeatherForCoords(lat, lng, false);
     });
 
-    // Force map to recalculate container size
     setTimeout(() => {
       if (state.map) state.map.invalidateSize();
-    }, 300);
+    }, 200);
   } catch (err) {
-    console.warn('Map initialization caught error:', err);
+    console.warn('Leaflet init error:', err);
   }
 }
 
@@ -295,7 +308,7 @@ function updateMapPosition(lat, lon, title, tempStr, rainInfo) {
   el.mapCoords.textContent = `📍 Vị trí: ${title} (${lat.toFixed(4)}, ${lon.toFixed(4)})`;
 
   setTimeout(() => {
-    state.map.invalidateSize();
+    if (state.map) state.map.invalidateSize();
   }, 200);
 }
 
@@ -435,7 +448,7 @@ function renderAllData() {
   el.pressure.textContent = `${Math.round(current.surface_pressure)} hPa`;
   el.visibility.textContent = '10 km';
 
-  // Render Forecasts (Sửa dứt điểm lỗi 2 ô "Bây giờ")
+  // Render Forecasts (Sửa dứt điểm 100% trùng 2 ô "Bây giờ")
   renderHourlyForecast(hourly);
   renderDailyForecast(daily);
 
@@ -452,7 +465,7 @@ function renderAllData() {
   updateMapPosition(state.lat, state.lon, state.locationName, `${tempRounded}°C ${info.icon}`, rainInfo);
 }
 
-// Render 24-Hour Forecast (Fix trùng "Bây giờ")
+// Render 24-Hour Forecast
 function renderHourlyForecast(hourly) {
   if (!hourly || !hourly.time) return;
   el.hourlyForecast.innerHTML = '';
@@ -482,7 +495,7 @@ function renderHourlyForecast(hourly) {
     const temp = Math.round(hourly.temperature_2m[dataIdx]);
     const pop = hourly.precipitation_probability ? hourly.precipitation_probability[dataIdx] : 0;
 
-    const isNow = (i === 0); // duy nhất ô đầu tiên là "Bây giờ"
+    const isNow = (i === 0);
 
     const div = document.createElement('div');
     div.className = `hourly-item ${isNow ? 'now' : ''}`;
@@ -608,6 +621,24 @@ function setupEvents() {
       state.map.flyTo([state.lat, state.lon], 13);
       setTimeout(() => state.map.invalidateSize(), 200);
     }
+  });
+
+  // Toggle Map Style: Standard Road Map vs Esri Satellite
+  el.btnMapStyle.addEventListener('click', () => {
+    if (!state.map || !state.baseTileOsm || !state.baseTileSat) return;
+    state.isSatellite = !state.isSatellite;
+    if (state.isSatellite) {
+      state.map.removeLayer(state.baseTileOsm);
+      state.baseTileSat.addTo(state.map);
+      el.btnMapStyle.innerHTML = '<i data-lucide="map"></i> <span>Bản đồ Đường bộ</span>';
+      el.btnMapStyle.classList.add('active');
+    } else {
+      state.map.removeLayer(state.baseTileSat);
+      state.baseTileOsm.addTo(state.map);
+      el.btnMapStyle.innerHTML = '<i data-lucide="layers"></i> <span>Bản đồ Vệ tinh</span>';
+      el.btnMapStyle.classList.remove('active');
+    }
+    initIcons();
   });
 
   el.btnRadarToggle.addEventListener('click', () => {

@@ -3,24 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SkyPulse - Dự báo thời tiết & Bản đồ định vị trực tiếp</title>
+  <title>SkyPulse Weather - Live Radar & Weather Experience</title>
   
   <!-- SEO & Meta -->
-  <meta name="description" content="Ứng dụng dự báo thời tiết thời gian thực theo vị trí của bạn, tích hợp bản đồ tương tác chính xác, chỉ số AQI, UV và dự báo 7 ngày." />
-  <meta name="theme-color" content="#0f172a" />
+  <meta name="description" content="Ứng dụng dự báo thời tiết thời gian thực theo vị trí địa lý của bạn, tích hợp bản đồ vệ tinh & radar mây mưa chính xác." />
+  <meta name="theme-color" content="#0b0f19" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌤️</text></svg>" />
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   
   <!-- Custom Style -->
-  <script type="module" crossorigin src="./assets/index-71QD2bcx.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-CbGbCMMo.css">
+  <script type="module" crossorigin src="./assets/index-o1ub2J_V.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-Cp9Kim0m.css">
 </head>
 <body class="theme-default">
   <div id="app" class="app-container">
@@ -35,14 +35,14 @@
         <div class="brand-icon">🌤️</div>
         <div class="brand-text">
           <h1>SkyPulse</h1>
-          <span class="badge">Live Radar & Weather</span>
+          <span class="badge">Live Radar & GPS Weather</span>
         </div>
       </div>
 
       <div class="search-box">
         <div class="search-input-wrapper">
           <i data-lucide="search" class="search-icon"></i>
-          <input type="text" id="citySearch" placeholder="Tìm kiếm thành phố, quận huyện..." autocomplete="off" />
+          <input type="text" id="citySearch" placeholder="Tìm kiếm Phường, Xã, Quận, Thành phố..." autocomplete="off" />
           <button id="clearSearch" class="clear-btn hidden" aria-label="Xóa">
             <i data-lucide="x"></i>
           </button>
@@ -51,7 +51,7 @@
       </div>
 
       <div class="actions">
-        <button id="btnGeo" class="btn btn-primary" title="Lấy thời tiết theo vị trí của bạn">
+        <button id="btnGeo" class="btn btn-primary" title="Lấy thời tiết theo vị trí GPS của bạn">
           <i data-lucide="locate"></i>
           <span>Vị trí của tôi</span>
         </button>
@@ -67,7 +67,7 @@
       <!-- Loading Overlay -->
       <div id="loader" class="loader-overlay hidden">
         <div class="spinner"></div>
-        <p id="loaderText">Đang tải dữ liệu vị trí và thời tiết...</p>
+        <p id="loaderText">Đang xác định vị trí & tải dữ liệu thời tiết...</p>
       </div>
 
       <!-- Error State Banner -->
@@ -87,8 +87,8 @@
           <div class="card card-hero">
             <div class="hero-header">
               <div class="location-info">
-                <h2 id="locationName">Đang định vị...</h2>
-                <p id="locationSub">Đang cập nhật vị trí chi tiết...</p>
+                <h2 id="locationName">Đang xác định vị trí...</h2>
+                <p id="locationSub">Đang quét tọa độ GPS...</p>
               </div>
               <div class="live-time" id="currentTime">--:--</div>
             </div>
@@ -101,7 +101,7 @@
               <div class="weather-status">
                 <div class="weather-icon-large" id="weatherIcon">🌤️</div>
                 <div class="status-details">
-                  <span class="status-text" id="weatherDesc">Đang tải...</span>
+                  <span class="status-text" id="weatherDesc">Đang cập nhật...</span>
                   <span class="feels-like" id="feelsLike">Cảm giác như --°C</span>
                 </div>
               </div>
@@ -123,13 +123,18 @@
             </div>
           </div>
 
-          <!-- Interactive Map Container (Đưa lên vị trí trung tâm nổi bật) -->
+          <!-- Interactive Map Container -->
           <div class="card card-map">
             <div class="card-header map-header">
-              <h3><i data-lucide="map-pin"></i> Bản đồ Định vị Vị trí & Live Radar Mây Mưa</h3>
+              <div class="map-title-group">
+                <h3><i data-lucide="map-pin"></i> Bản đồ Định vị & Weather Radar</h3>
+              </div>
               <div class="map-controls">
-                <button id="btnRadarToggle" class="btn btn-sm btn-radar active" title="Bật/Tắt Radar Mưa thời gian thực">
-                  <span class="radar-dot"></span> Radar Mưa Live
+                <button id="btnMapStyle" class="btn btn-sm btn-map-style" title="Chuyển chế độ Bản đồ / Ảnh Vệ tinh">
+                  <i data-lucide="layers"></i> <span>Bản đồ Vệ tinh</span>
+                </button>
+                <button id="btnRadarToggle" class="btn btn-sm btn-radar active" title="Bật/Tắt Radar Mưa Live">
+                  <span class="radar-dot"></span> Radar Mưa
                 </button>
                 <button id="btnRecenter" class="btn btn-icon btn-sm" title="Về vị trí của tôi">
                   <i data-lucide="crosshair"></i>
@@ -142,7 +147,7 @@
               <div class="map-coords-badge" id="mapCoords">Vị trí: Đang xác định...</div>
             </div>
             <div class="map-footer-hint">
-              <i data-lucide="mouse-pointer-click"></i> <span>Nhấp vào bất kì điểm nào trên bản đồ để xem ngay dự báo & cảnh báo mưa khu vực đó.</span>
+              <i data-lucide="mouse-pointer-click"></i> <span>Nhấp vào bất kì vị trí nào trên bản đồ để xem chi tiết thời tiết & cảnh báo mưa khu vực đó.</span>
             </div>
           </div>
 
@@ -237,7 +242,7 @@
 
     <!-- Footer -->
     <footer class="app-footer">
-      <p>Powered by Open-Meteo & Leaflet OpenStreetMap • SkyPulse Weather v1.0.1</p>
+      <p>Powered by Open-Meteo & Leaflet OpenStreetMap • SkyPulse v2.0</p>
     </footer>
 
   </div>

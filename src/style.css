@@ -616,14 +616,25 @@ body {
   gap: 10px;
 }
 
-.btn-radar {
+.btn-map-style {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid var(--border-card);
-  color: var(--text-secondary);
+  color: var(--text-primary);
   display: flex;
   align-items: center;
   gap: 6px;
   transition: var(--transition-normal);
+}
+
+.btn-map-style:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: var(--accent-blue);
+}
+
+.btn-map-style.active {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
 }
 
 .btn-radar.active {
