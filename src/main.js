@@ -34,9 +34,9 @@ function initIcons() {
 
 // App State
 const state = {
-  lat: 21.0285, // Default Hanoi
-  lon: 105.8542,
-  locationName: 'Hà Nội',
+  lat: 16.0544, // Default Da Nang
+  lon: 108.2022,
+  locationName: 'Đà Nẵng',
   locationSub: 'Việt Nam',
   isUserLocation: false,
   map: null,
@@ -116,7 +116,7 @@ const el = {
   mapCoords: document.getElementById('mapCoords')
 };
 
-// Helper: Loader
+// Helper: Loader & Error
 function showLoader(text = 'Đang tải dữ liệu thời tiết...') {
   el.loaderText.textContent = text;
   el.loader.classList.remove('hidden');
@@ -149,13 +149,13 @@ function getWindDirection(deg) {
 function getUVCategory(uv) {
   if (uv <= 2) return { text: 'An toàn (Thấp)', color: '#10b981' };
   if (uv <= 5) return { text: 'Trung bình', color: '#f59e0b' };
-  if (uv <= 7) return { text: 'Cao (Bảo vệ da)', color: '#f97316' };
-  if (uv <= 10) return { text: 'Rất cao (Nguy hiểm)', color: '#ef4444' };
-  return { text: 'Cực độ (Tránh ra đường)', color: '#a855f7' };
+  if (uv <= 7) return { text: 'Cao (Nên đội mũ)', color: '#f97316' };
+  if (uv <= 10) return { text: 'Rất cao (Tránh ra nắng)', color: '#ef4444' };
+  return { text: 'Cực độ (Nguy hại)', color: '#a855f7' };
 }
 
 function getAQICategory(aqi) {
-  if (aqi <= 50) return { text: 'Tốt (Không khí trong lành)', color: '#10b981' };
+  if (aqi <= 50) return { text: 'Tốt (Trong lành)', color: '#10b981' };
   if (aqi <= 100) return { text: 'Trung bình (Chấp nhận được)', color: '#f59e0b' };
   if (aqi <= 150) return { text: 'Kém cho người nhạy cảm', color: '#f97316' };
   if (aqi <= 200) return { text: 'Xấu (Nên đeo khẩu trang)', color: '#ef4444' };
@@ -163,38 +163,38 @@ function getAQICategory(aqi) {
 }
 
 // Leaflet Map Initialization
-async function initMap() {
+function initMap() {
+  if (state.map) return;
+
   state.map = L.map('map', {
     center: [state.lat, state.lon],
     zoom: 13,
     zoomControl: true
   });
 
-  // Modern Voyager CartoDB Base Layer
+  // Base Map Layer - CartoDB Voyager Tile Map
   L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
     maxZoom: 19,
     subdomains: 'abcd',
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
   }).addTo(state.map);
 
-  // Custom Animated Glowing Marker
+  // Custom Pin Marker
   const customIcon = L.divIcon({
     className: 'custom-leaflet-marker',
     html: `
-      <div style="position: relative;">
+      <div style="position: relative; display: flex; align-items: center; justify-content: center;">
         <div style="
           position: absolute;
-          top: -10px;
-          left: -10px;
-          width: 56px;
-          height: 56px;
+          width: 54px;
+          height: 54px;
           border-radius: 50%;
-          background: rgba(56, 189, 248, 0.3);
-          animation: pulse-ring 2s infinite;
+          background: rgba(56, 189, 248, 0.4);
+          animation: pulse-ring 2s infinite ease-out;
         "></div>
         <div style="
-          width: 36px;
-          height: 36px;
+          width: 38px;
+          height: 38px;
           background: linear-gradient(135deg, #0284c7, #38bdf8);
           border: 3px solid #ffffff;
           border-radius: 50%;
@@ -202,21 +202,21 @@ async function initMap() {
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 18px;
+          font-size: 20px;
           position: relative;
           z-index: 2;
         ">📍</div>
       </div>
     `,
-    iconSize: [36, 36],
-    iconAnchor: [18, 18]
+    iconSize: [38, 38],
+    iconAnchor: [19, 19]
   });
 
   state.marker = L.marker([state.lat, state.lon], { icon: customIcon }).addTo(state.map);
-  
-  // Accuracy Radar Circle Overlay
+
+  // Accuracy Circle
   state.radarCircle = L.circle([state.lat, state.lon], {
-    radius: 1500,
+    radius: 1200,
     color: '#38bdf8',
     fillColor: '#38bdf8',
     fillOpacity: 0.12,
@@ -224,17 +224,22 @@ async function initMap() {
     dashArray: '6, 8'
   }).addTo(state.map);
 
-  // Load RainViewer Weather Radar Tiles Overlay
-  await loadRadarOverlay();
+  // Load RainViewer Radar Overlay
+  loadRadarOverlay();
 
-  // Click Map Event to query local weather
+  // Click Event on Map
   state.map.on('click', (e) => {
     const { lat, lng } = e.latlng;
     fetchWeatherForCoords(lat, lng, false);
   });
+
+  // Force map to recalculate container size
+  setTimeout(() => {
+    state.map.invalidateSize();
+  }, 300);
 }
 
-// Fetch RainViewer Live Weather Radar Timestamp
+// Fetch RainViewer Live Weather Radar Overlay
 async function loadRadarOverlay() {
   try {
     const res = await fetch('https://api.rainviewer.com/public/weather-maps.json');
@@ -249,7 +254,7 @@ async function loadRadarOverlay() {
         state.radarLayer = L.tileLayer(`https://tilecache.rainviewer.com/v2/radar/${latestTime}/256/{z}/{x}/{y}/2/1_1.png`, {
           opacity: 0.65,
           zIndex: 500,
-          attribution: '&copy; <a href="https://www.rainviewer.com/">RainViewer Live Radar</a>'
+          attribution: '&copy; <a href="https://www.rainviewer.com/">RainViewer Radar</a>'
         });
         if (state.radarVisible) {
           state.radarLayer.addTo(state.map);
@@ -257,7 +262,7 @@ async function loadRadarOverlay() {
       }
     }
   } catch (err) {
-    console.warn('RainViewer Radar load failed:', err);
+    console.warn('RainViewer Radar load warning:', err);
   }
 }
 
@@ -281,18 +286,23 @@ function updateMapPosition(lat, lon, title, tempStr, rainInfo) {
 
   state.marker.setPopupContent(popupHTML);
   state.marker.openPopup();
-  el.mapCoords.textContent = `📍 Khu vực: ${title} (${lat.toFixed(4)}, ${lon.toFixed(4)})`;
+  el.mapCoords.textContent = `📍 Vị trí: ${title} (${lat.toFixed(4)}, ${lon.toFixed(4)})`;
+
+  setTimeout(() => {
+    state.map.invalidateSize();
+  }, 200);
 }
 
-// Detailed Reverse Geocoding (Address level: Ward, District, City)
+// Detailed Reverse Geocoding
 async function fetchReverseGeocoding(lat, lon) {
   try {
-    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&accept-language=vi`);
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&accept-language=vi`, {
+      headers: { 'Accept-Language': 'vi' }
+    });
     if (res.ok) {
       const data = await res.json();
       const addr = data.address || {};
 
-      // Build detailed location hierarchy
       const road = addr.road || addr.pedestrian || '';
       const ward = addr.suburb || addr.quarter || addr.neighbourhood || addr.village || addr.town || '';
       const district = addr.city_district || addr.district || addr.county || '';
@@ -304,8 +314,10 @@ async function fetchReverseGeocoding(lat, lon) {
         primaryName = `${ward}, ${district}`;
       } else if (road && district) {
         primaryName = `${road}, ${district}`;
-      } else if (district) {
-        primaryName = district;
+      } else if (district && city) {
+        primaryName = `${district}, ${city}`;
+      } else if (ward && city) {
+        primaryName = `${ward}, ${city}`;
       } else if (city) {
         primaryName = city;
       } else {
@@ -313,7 +325,7 @@ async function fetchReverseGeocoding(lat, lon) {
       }
 
       let subName = '';
-      if (city && city !== primaryName) {
+      if (city && !primaryName.includes(city)) {
         subName = `${city}, ${country}`;
       } else {
         subName = country;
@@ -322,13 +334,13 @@ async function fetchReverseGeocoding(lat, lon) {
       return { primaryName, subName };
     }
   } catch (err) {
-    console.warn('Reverse geocoding detailed fail:', err);
+    console.warn('Reverse geocoding warning:', err);
   }
   return { primaryName: `Tọa độ (${lat.toFixed(2)}, ${lon.toFixed(2)})`, subName: 'Việt Nam' };
 }
 
 async function fetchWeatherForCoords(lat, lon, isUserGeo = false) {
-  showLoader('Đang xác định khu vực và tình hình mây mưa...');
+  showLoader('Đang cập nhật thời tiết khu vực...');
   try {
     state.lat = lat;
     state.lon = lon;
@@ -352,7 +364,7 @@ async function fetchWeatherForCoords(lat, lon, isUserGeo = false) {
     hideLoader();
   } catch (err) {
     console.error('Fetch Weather Error:', err);
-    showError('Không thể tải dữ liệu thời tiết khu vực. Vui lòng thử lại!');
+    showError('Không thể tải dữ liệu thời tiết khu vực. Vui lòng kiểm tra lại!');
   }
 }
 
@@ -372,7 +384,7 @@ function renderAllData() {
 
   // Hero Card
   el.locationName.textContent = state.locationName;
-  el.locationSub.textContent = state.isUserLocation ? `📍 Vị trí hiện tại • ${state.locationSub}` : state.locationSub;
+  el.locationSub.textContent = state.isUserLocation ? `📍 Vị trí hiện tại của bạn • ${state.locationSub}` : state.locationSub;
   
   const now = new Date();
   el.currentTime.textContent = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
@@ -417,11 +429,11 @@ function renderAllData() {
   el.pressure.textContent = `${Math.round(current.surface_pressure)} hPa`;
   el.visibility.textContent = '10 km';
 
-  // Render Forecasts
+  // Render Forecasts (Sửa dứt điểm lỗi 2 ô "Bây giờ")
   renderHourlyForecast(hourly);
   renderDailyForecast(daily);
 
-  // Rain status details for Map Popup
+  // Rain status
   const hasRain = current.precipitation > 0 || info.isRain;
   const rainInfo = {
     isRain: hasRain,
@@ -430,25 +442,41 @@ function renderAllData() {
       : `🌤️ Khô ráo, không có mưa`
   };
 
-  // Update Map Position & Popup
+  // Update Map Position & Marker
   updateMapPosition(state.lat, state.lon, state.locationName, `${tempRounded}°C ${info.icon}`, rainInfo);
 }
 
+// Render 24-Hour Forecast (Fix trùng "Bây giờ")
 function renderHourlyForecast(hourly) {
   if (!hourly || !hourly.time) return;
   el.hourlyForecast.innerHTML = '';
 
-  const nowHour = new Date().getHours();
-  for (let i = 0; i < 24; i++) {
-    if (i >= hourly.time.length) break;
-    const date = new Date(hourly.time[i]);
-    const hourNum = date.getHours();
-    const isNow = i === 0 || hourNum === nowHour;
+  const now = new Date();
+  const currentISO = now.toISOString().slice(0, 13); // "YYYY-MM-DDTHH"
 
-    const code = hourly.weather_code[i];
+  // Find start index matching current hour
+  let startIndex = 0;
+  for (let idx = 0; idx < hourly.time.length; idx++) {
+    if (hourly.time[idx].startsWith(currentISO)) {
+      startIndex = idx;
+      break;
+    }
+  }
+
+  // Slice 24 hours from current hour
+  for (let i = 0; i < 24; i++) {
+    const dataIdx = startIndex + i;
+    if (dataIdx >= hourly.time.length) break;
+
+    const date = new Date(hourly.time[dataIdx]);
+    const hourNum = date.getHours();
+
+    const code = hourly.weather_code[dataIdx];
     const info = WMO_CODES[code] || { icon: '🌤️' };
-    const temp = Math.round(hourly.temperature_2m[i]);
-    const pop = hourly.precipitation_probability ? hourly.precipitation_probability[i] : 0;
+    const temp = Math.round(hourly.temperature_2m[dataIdx]);
+    const pop = hourly.precipitation_probability ? hourly.precipitation_probability[dataIdx] : 0;
+
+    const isNow = (i === 0); // duy nhất ô đầu tiên là "Bây giờ"
 
     const div = document.createElement('div');
     div.className = `hourly-item ${isNow ? 'now' : ''}`;
@@ -545,7 +573,7 @@ function renderSearchSuggestions(results) {
 // Browser Geolocation Trigger
 function getUserLocation() {
   if ('geolocation' in navigator) {
-    showLoader('Đang quét vị trí GPS và khu vực của bạn...');
+    showLoader('Đang xác định vị trí GPS của bạn...');
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude, longitude } = pos.coords;
@@ -553,7 +581,7 @@ function getUserLocation() {
       },
       (err) => {
         console.warn('Geolocation denied or failed:', err.message);
-        showError('Không thể lấy vị trí GPS tự động. Bạn có thể sử dụng tìm kiếm hoặc nhấp trực tiếp trên bản đồ.');
+        showError('Không thể lấy vị trí GPS tự động. Bạn có thể tìm kiếm hoặc nhấp trực tiếp trên bản đồ.');
         fetchWeatherForCoords(state.lat, state.lon, false);
       },
       { enableHighAccuracy: true, timeout: 12000 }
@@ -572,6 +600,7 @@ function setupEvents() {
   el.btnRecenter.addEventListener('click', () => {
     if (state.map) {
       state.map.flyTo([state.lat, state.lon], 13);
+      setTimeout(() => state.map.invalidateSize(), 200);
     }
   });
 
@@ -601,9 +630,9 @@ function setupEvents() {
 }
 
 // Initialize Application
-async function init() {
+function init() {
   initIcons();
-  await initMap();
+  initMap();
   setupEvents();
   getUserLocation();
 }
