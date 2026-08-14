@@ -20,7 +20,8 @@ import {
   Gauge, 
   Layers, 
   LocateFixed, 
-  ShieldCheck 
+  ShieldCheck,
+  Palette
 } from 'lucide';
 
 // Initialize Lucide Icons
@@ -28,10 +29,20 @@ function refreshIcons() {
   createIcons({
     icons: {
       Search, X, Crosshair, RefreshCw, MapPin, ArrowDown, ArrowUp, Clock, Calendar,
-      Droplets, Wind, Sun, SunMedium, SunDim, Activity, Gauge, Layers, LocateFixed, ShieldCheck
+      Droplets, Wind, Sun, SunMedium, SunDim, Activity, Gauge, Layers, LocateFixed, ShieldCheck, Palette
     }
   });
 }
+
+// Theme Modes (Rich & Vibrant Atmospheric Palettes)
+const THEMES = [
+  { id: 'aurora', label: 'Cực quang', class: 'theme-aurora' },
+  { id: 'sunset', label: 'Hoàng hôn', class: 'theme-sunset' },
+  { id: 'ocean', label: 'Đại dương', class: 'theme-ocean' },
+  { id: 'storm', label: 'Bão điện', class: 'theme-storm' },
+  { id: 'auto', label: 'Tự động', class: null }
+];
+let currentThemeIndex = 0;
 
 // Application State
 const state = {
@@ -65,6 +76,7 @@ const TILE_PROVIDERS = {
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     options: {
       maxZoom: 19,
+      crossOrigin: true,
       attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS'
     }
   },
@@ -72,6 +84,7 @@ const TILE_PROVIDERS = {
     url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
     options: {
       maxZoom: 19,
+      crossOrigin: true,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }
   }
@@ -113,6 +126,8 @@ const el = {
   btnGeo: document.getElementById('btnGeo'),
   btnRefresh: document.getElementById('btnRefresh'),
   btnRecenter: document.getElementById('btnRecenter'),
+  btnThemeToggle: document.getElementById('btnThemeToggle'),
+  themeLabel: document.getElementById('themeLabel'),
   quickCities: document.getElementById('quickCities'),
   unitSwitch: document.getElementById('unitSwitch'),
 
@@ -222,17 +237,17 @@ function getWindLevel(kmh) {
 function getUVDetails(uv) {
   if (uv <= 2) return { text: 'Thấp (An toàn)', pill: 'Thấp', advice: 'Bảo vệ da an toàn, thoải mái hoạt động', color: '#10b981' };
   if (uv <= 5) return { text: 'Trung bình', pill: 'Trung bình', advice: 'Nên đội mũ & đeo kính râm khi ra ngoài', color: '#f59e0b' };
-  if (uv <= 7) return { text: 'Cao (Cần che chắn)', pill: 'Cao', advice: 'Thoa kem chống nắng & hạn chế nắng gắt', color: '#f97316' };
-  if (uv <= 10) return { text: 'Rất cao (Nguy hiểm)', pill: 'Rất cao', advice: 'Tránh ở ngoài trời nắng từ 11h - 15h', color: '#ef4444' };
-  return { text: 'Cực độ (Cực nguy hại)', pill: 'Cực độ', advice: 'Nguy cơ bỏng da cao, hãy ở trong nhà', color: '#a855f7' };
+  if (uv <= 7) return { text: 'Cao (Cần che chắn)', pill: 'Cao', advice: 'Thoa kem chống nắng & hạn chế nắng gắt', color: '#ff9f1c' };
+  if (uv <= 10) return { text: 'Rất cao (Nguy hiểm)', pill: 'Rất cao', advice: 'Tránh ở ngoài trời nắng từ 11h - 15h', color: '#f43f5e' };
+  return { text: 'Cực độ (Cực nguy hại)', pill: 'Cực độ', advice: 'Nguy cơ bỏng da cao, hãy ở trong nhà', color: '#c084fc' };
 }
 
 function getAQIDetails(aqi) {
   if (aqi <= 50) return { text: 'Không khí trong lành', badge: 'Tốt', color: '#10b981' };
   if (aqi <= 100) return { text: 'Chất lượng chấp nhận được', badge: 'Trung bình', color: '#f59e0b' };
-  if (aqi <= 150) return { text: 'Kém (Nhạy cảm nên chú ý)', badge: 'Kém', color: '#f97316' };
-  if (aqi <= 200) return { text: 'Xấu (Nên đeo khẩu trang)', badge: 'Xấu', color: '#ef4444' };
-  return { text: 'Rất nguy hại (Hạn chế ra ngoài)', badge: 'Nguy hại', color: '#a855f7' };
+  if (aqi <= 150) return { text: 'Kém (Nhạy cảm nên chú ý)', badge: 'Kém', color: '#ff9f1c' };
+  if (aqi <= 200) return { text: 'Xấu (Nên đeo khẩu trang)', badge: 'Xấu', color: '#f43f5e' };
+  return { text: 'Rất nguy hại (Hạn chế ra ngoài)', badge: 'Nguy hại', color: '#c084fc' };
 }
 
 function getHumidityLevel(rh) {
@@ -274,16 +289,16 @@ function initMap() {
             width: 44px;
             height: 44px;
             border-radius: 50%;
-            background: rgba(56, 189, 248, 0.4);
+            background: rgba(0, 240, 255, 0.45);
             animation: beacon-wave 2s infinite cubic-bezier(0, 0, 0.2, 1);
           "></div>
           <div style="
             width: 24px;
             height: 24px;
-            background: linear-gradient(135deg, #0284c7, #38bdf8);
+            background: linear-gradient(135deg, #00f0ff, #38bdf8);
             border: 3px solid #ffffff;
             border-radius: 50%;
-            box-shadow: 0 0 16px rgba(56, 189, 248, 1), 0 4px 10px rgba(0,0,0,0.6);
+            box-shadow: 0 0 20px rgba(0, 240, 255, 1), 0 4px 10px rgba(0,0,0,0.6);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -301,9 +316,9 @@ function initMap() {
     // Accuracy Circle
     state.radarCircle = L.circle([state.lat, state.lon], {
       radius: 1200,
-      color: '#38bdf8',
-      fillColor: '#38bdf8',
-      fillOpacity: 0.1,
+      color: '#00f0ff',
+      fillColor: '#00f0ff',
+      fillOpacity: 0.15,
       weight: 2,
       dashArray: '6, 8'
     }).addTo(state.map);
@@ -354,9 +369,9 @@ function updateMapPosition(lat, lon, title, tempStr, rainInfo) {
 
   const popupContent = `
     <div style="text-align: center; padding: 4px 6px; font-family: inherit;">
-      <div style="font-size: 11px; font-weight: 700; color: #38bdf8; margin-bottom: 2px;">📍 ${title}</div>
+      <div style="font-size: 11px; font-weight: 700; color: #00f0ff; margin-bottom: 2px;">📍 ${title}</div>
       <div style="font-size: 18px; font-weight: 800; color: #ffffff;">${tempStr}</div>
-      <div style="font-size: 11px; margin-top: 2px; color: ${rainInfo.isRain ? '#38bdf8' : '#10b981'}; font-weight: 600;">
+      <div style="font-size: 11px; margin-top: 2px; color: ${rainInfo.isRain ? '#00f0ff' : '#10b981'}; font-weight: 600;">
         ${rainInfo.text}
       </div>
     </div>
@@ -425,6 +440,24 @@ async function fetchReverseGeocoding(lat, lon) {
   return { primaryName: `Tọa độ (${lat.toFixed(2)}, ${lon.toFixed(2)})`, subName: 'Việt Nam' };
 }
 
+// Apply Atmospheric Theme
+function applyTheme() {
+  const chosen = THEMES[currentThemeIndex];
+  if (chosen.class) {
+    document.body.className = chosen.class;
+    return;
+  }
+  // Auto mode based on current data
+  if (state.weatherData && state.weatherData.current) {
+    const current = state.weatherData.current;
+    const code = current.weather_code;
+    const info = WMO_CODES[code] || { theme: 'sunny' };
+    document.body.className = current.is_day ? `theme-${info.theme}` : 'theme-night';
+  } else {
+    document.body.className = 'theme-aurora';
+  }
+}
+
 // Primary Data Fetch
 async function fetchWeatherForCoords(lat, lon, isUserGeo = false) {
   showLoader('Đang kết nối vệ tinh & nạp dữ liệu thời tiết...');
@@ -466,8 +499,8 @@ function renderAllData() {
   const code = current.weather_code;
   const info = WMO_CODES[code] || { desc: 'Không xác định', icon: '🌤️', theme: 'sunny', isRain: false };
 
-  // Set Atmospheric Theme
-  document.body.className = current.is_day ? `theme-${info.theme}` : 'theme-night';
+  // Set Theme
+  applyTheme();
 
   // Hero Card
   el.locationName.textContent = state.locationName;
@@ -566,7 +599,7 @@ function renderTelemetryWidgets(current, daily, uvDetail, aqiDetail, aqiScore) {
     } else {
       sunProgress = 0;
       el.sunPhasePill.textContent = 'Ban đêm';
-      el.sunPhasePill.style.color = 'var(--accent-indigo)';
+      el.sunPhasePill.style.color = 'var(--accent-purple)';
     }
 
     // Parabolic Arc Position Calculation
@@ -770,6 +803,16 @@ function setupEventListeners() {
   // GPS & Refresh
   el.btnGeo.addEventListener('click', getUserLocation);
   el.btnRefresh.addEventListener('click', () => fetchWeatherForCoords(state.lat, state.lon, state.isUserLocation));
+
+  // Theme Mood Toggle
+  if (el.btnThemeToggle) {
+    el.btnThemeToggle.addEventListener('click', () => {
+      currentThemeIndex = (currentThemeIndex + 1) % THEMES.length;
+      const theme = THEMES[currentThemeIndex];
+      if (el.themeLabel) el.themeLabel.textContent = theme.label;
+      applyTheme();
+    });
+  }
 
   // Map Recenter
   el.btnRecenter.addEventListener('click', () => {
