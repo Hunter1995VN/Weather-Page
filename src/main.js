@@ -164,12 +164,12 @@ function initMap() {
       zoomControl: true
     });
 
-    // Tile Layer: OpenStreetMap Standard (Full street resolution)
-    state.baseTileOsm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // Tile Layer: CartoDB Voyager (High definition dark-compatible map layer)
+    state.baseTileOsm = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
       minZoom: 1,
       maxZoom: 19,
-      maxNativeZoom: 18,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+      subdomains: 'abcd',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
     }).addTo(state.map);
 
     // Custom Pin Marker Icon
@@ -468,6 +468,11 @@ function renderDailyForecast(daily) {
   if (!daily || !daily.time) return;
   el.dailyForecast.innerHTML = '';
 
+  // Calculate week min & max for relative temp bar rendering
+  const allMin = Math.min(...daily.temperature_2m_min);
+  const allMax = Math.max(...daily.temperature_2m_max);
+  const range = (allMax - allMin) || 1;
+
   for (let i = 0; i < daily.time.length; i++) {
     const isToday = i === 0;
     const dayText = getDayName(daily.time[i], isToday);
@@ -476,14 +481,20 @@ function renderDailyForecast(daily) {
     const minTemp = Math.round(daily.temperature_2m_min[i]);
     const maxTemp = Math.round(daily.temperature_2m_max[i]);
 
+    const leftPercent = Math.max(0, Math.min(100, ((minTemp - allMin) / range) * 100));
+    const widthPercent = Math.max(12, Math.min(100 - leftPercent, ((maxTemp - minTemp) / range) * 100));
+
     const div = document.createElement('div');
     div.className = 'daily-item';
     div.innerHTML = `
       <div class="daily-day">${dayText}</div>
       <div class="daily-icon">${info.icon}</div>
       <div class="daily-desc">${info.desc}</div>
-      <div class="daily-temp-bar">
+      <div class="temp-bar-wrapper">
         <span class="temp-min-val">${minTemp}°</span>
+        <div class="temp-bar-track">
+          <div class="temp-bar-fill" style="left: ${leftPercent.toFixed(1)}%; width: ${widthPercent.toFixed(1)}%;"></div>
+        </div>
         <span class="temp-max-val">${maxTemp}°</span>
       </div>
     `;
