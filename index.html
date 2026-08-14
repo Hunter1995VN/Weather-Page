@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SkyPulse Weather - Dự báo thời tiết & Bản đồ định vị</title>
+  <title>SkyPulse Weather - Dashboard thời tiết trực quan</title>
   
   <!-- SEO & Meta -->
-  <meta name="description" content="Ứng dụng dự báo thời tiết thời gian thực theo vị trí địa lý của bạn, tích hợp bản đồ địa hình HD chính xác." />
+  <meta name="description" content="Ứng dụng dự báo thời tiết thời gian thực theo vị trí địa lý của bạn, tích hợp bản đồ định vị chính xác." />
   <meta name="theme-color" content="#0b0f19" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
@@ -16,13 +16,13 @@
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   
   <!-- Custom Style -->
-  <link rel="stylesheet" href="./src/style.css?v=3.0.0" />
+  <link rel="stylesheet" href="./src/style.css?v=4.0.0" />
 </head>
 <body class="theme-default">
   <div id="app" class="app-container">
@@ -72,17 +72,10 @@
         <p id="loaderText">Đang xác định vị trí & tải dữ liệu thời tiết...</p>
       </div>
 
-      <!-- Error State Banner -->
-      <div id="errorBanner" class="error-banner hidden">
-        <i data-lucide="alert-triangle"></i>
-        <span id="errorMessage">Không thể kết nối đến máy chủ thời tiết.</span>
-        <button id="btnRetry" class="btn btn-sm">Thử lại</button>
-      </div>
-
-      <!-- Dashboard Grid (60% Main Weather & 40% Map + Metrics) -->
+      <!-- Dashboard Grid (Vừa khít màn hình 100% Zoom) -->
       <div class="dashboard-grid">
 
-        <!-- Left Column: Current Weather, 24h & 7-Day Forecast -->
+        <!-- Left Column: Hero Weather & 24h Forecast -->
         <section class="column-left">
           
           <!-- Hero Card: Current Weather -->
@@ -153,9 +146,7 @@
           <!-- Interactive Map Container -->
           <div class="card card-map">
             <div class="card-header map-header">
-              <div class="map-title-group">
-                <h3><i data-lucide="map-pin"></i> Bản đồ Định vị Vị trí Trực tiếp</h3>
-              </div>
+              <h3><i data-lucide="map-pin"></i> Bản đồ Định vị Vị trí Trực tiếp</h3>
               <div class="map-controls">
                 <button id="btnRecenter" class="btn btn-icon btn-sm" title="Về vị trí của tôi">
                   <i data-lucide="crosshair"></i>
@@ -166,9 +157,6 @@
             <div class="map-wrapper">
               <div id="map"></div>
               <div class="map-coords-badge" id="mapCoords">Vị trí: Đang xác định...</div>
-            </div>
-            <div class="map-footer-hint">
-              <i data-lucide="mouse-pointer-click"></i> <span>Nhấp vào bất kì vị trí nào trên bản đồ để xem chi tiết thời tiết khu vực đó.</span>
             </div>
           </div>
 
@@ -238,11 +226,11 @@
 
     <!-- Footer -->
     <footer class="app-footer">
-      <p>Powered by Open-Meteo & Leaflet OpenStreetMap • SkyPulse v3.0 Master Release</p>
+      <p>Powered by Open-Meteo & Leaflet OpenStreetMap • SkyPulse v4.0 Perfect Release</p>
     </footer>
 
   </div>
 
-  <script type="module" src="./src/main.js?v=3.0.0"></script>
+  <script type="module" src="./src/main.js?v=4.0.0"></script>
 </body>
 </html>

@@ -20,8 +20,7 @@ import {
   MapPin, 
   MousePointerClick, 
   Crosshair, 
-  CalendarDays,
-  Layers
+  CalendarDays
 } from 'lucide';
 
 // Initialize Lucide Icons
@@ -29,7 +28,7 @@ function initIcons() {
   createIcons({
     icons: {
       Search, X, Locate, RefreshCw, AlertTriangle, ArrowDown, ArrowUp, Clock, Clock3,
-      Droplets, Wind, Sun, Activity, Gauge, Eye, MapPin, MousePointerClick, Crosshair, CalendarDays, Layers
+      Droplets, Wind, Sun, Activity, Gauge, Eye, MapPin, MousePointerClick, Crosshair, CalendarDays
     }
   });
 }
@@ -43,12 +42,8 @@ const state = {
   isUserLocation: false,
   map: null,
   baseTileOsm: null,
-  baseTileSat: null,
-  isSatellite: false,
   marker: null,
   radarCircle: null,
-  radarLayer: null,
-  radarVisible: false,
   weatherData: null,
   aqiData: null
 };
@@ -82,9 +77,6 @@ const WMO_CODES = {
 const el = {
   loader: document.getElementById('loader'),
   loaderText: document.getElementById('loaderText'),
-  errorBanner: document.getElementById('errorBanner'),
-  errorMessage: document.getElementById('errorMessage'),
-  btnRetry: document.getElementById('btnRetry'),
   
   citySearch: document.getElementById('citySearch'),
   clearSearch: document.getElementById('clearSearch'),
@@ -92,8 +84,6 @@ const el = {
   btnGeo: document.getElementById('btnGeo'),
   btnRefresh: document.getElementById('btnRefresh'),
   btnRecenter: document.getElementById('btnRecenter'),
-  btnRadarToggle: document.getElementById('btnRadarToggle'),
-  btnMapStyle: document.getElementById('btnMapStyle'),
 
   locationName: document.getElementById('locationName'),
   locationSub: document.getElementById('locationSub'),
@@ -122,21 +112,14 @@ const el = {
   mapCoords: document.getElementById('mapCoords')
 };
 
-// Helper: Loader & Error
+// Loader
 function showLoader(text = 'Đang tải dữ liệu thời tiết...') {
-  el.loaderText.textContent = text;
-  el.loader.classList.remove('hidden');
-  el.errorBanner.classList.add('hidden');
+  if (el.loaderText) el.loaderText.textContent = text;
+  if (el.loader) el.loader.classList.remove('hidden');
 }
 
 function hideLoader() {
-  el.loader.classList.add('hidden');
-}
-
-function showError(msg) {
-  hideLoader();
-  el.errorMessage.textContent = msg;
-  el.errorBanner.classList.remove('hidden');
+  if (el.loader) el.loader.classList.add('hidden');
 }
 
 // Formatters
@@ -181,24 +164,13 @@ function initMap() {
       zoomControl: true
     });
 
-    // Tile Layer 1: OpenStreetMap Standard (Full street resolution)
+    // Tile Layer: OpenStreetMap Standard (Full street resolution)
     state.baseTileOsm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       minZoom: 1,
       maxZoom: 19,
       maxNativeZoom: 18,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-    });
-
-    // Tile Layer 2: Esri Satellite World Imagery
-    state.baseTileSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      minZoom: 1,
-      maxZoom: 19,
-      maxNativeZoom: 18,
-      attribution: 'Tiles &copy; Esri'
-    });
-
-    // Default to OpenStreetMap Standard
-    state.baseTileOsm.addTo(state.map);
+    }).addTo(state.map);
 
     // Custom Pin Marker Icon
     const customIcon = L.divIcon({
@@ -207,46 +179,43 @@ function initMap() {
         <div style="position: relative; display: flex; align-items: center; justify-content: center;">
           <div style="
             position: absolute;
-            width: 54px;
-            height: 54px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
             background: rgba(56, 189, 248, 0.4);
             animation: pulse-ring 2s infinite ease-out;
           "></div>
           <div style="
-            width: 38px;
-            height: 38px;
+            width: 36px;
+            height: 36px;
             background: linear-gradient(135deg, #0284c7, #38bdf8);
             border: 3px solid #ffffff;
             border-radius: 50%;
-            box-shadow: 0 0 20px rgba(56, 189, 248, 0.9), 0 4px 10px rgba(0,0,0,0.5);
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.9), 0 4px 8px rgba(0,0,0,0.5);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
+            font-size: 18px;
             position: relative;
             z-index: 2;
           ">📍</div>
         </div>
       `,
-      iconSize: [38, 38],
-      iconAnchor: [19, 19]
+      iconSize: [36, 36],
+      iconAnchor: [18, 18]
     });
 
     state.marker = L.marker([state.lat, state.lon], { icon: customIcon }).addTo(state.map);
 
     // Accuracy Circle
     state.radarCircle = L.circle([state.lat, state.lon], {
-      radius: 1200,
+      radius: 1000,
       color: '#38bdf8',
       fillColor: '#38bdf8',
       fillOpacity: 0.12,
       weight: 2,
       dashArray: '6, 8'
     }).addTo(state.map);
-
-    // Load RainViewer Weather Radar
-    loadRadarOverlay();
 
     // Map Click Event
     state.map.on('click', (e) => {
@@ -262,35 +231,6 @@ function initMap() {
   }
 }
 
-// Fetch RainViewer Live Weather Radar Overlay
-async function loadRadarOverlay() {
-  try {
-    const res = await fetch('https://api.rainviewer.com/public/weather-maps.json');
-    if (res.ok) {
-      const data = await res.json();
-      const pastRadar = data.radar && data.radar.past;
-      if (pastRadar && pastRadar.length > 0) {
-        const latestTime = pastRadar[pastRadar.length - 1].time;
-        if (state.radarLayer) {
-          state.map.removeLayer(state.radarLayer);
-        }
-        state.radarLayer = L.tileLayer(`https://tilecache.rainviewer.com/v2/radar/${latestTime}/256/{z}/{x}/{y}/2/1_1.png`, {
-          opacity: 0.65,
-          zIndex: 500,
-          maxNativeZoom: 12,
-          maxZoom: 19,
-          attribution: '&copy; <a href="https://www.rainviewer.com/">RainViewer Radar</a>'
-        });
-        if (state.radarVisible) {
-          state.radarLayer.addTo(state.map);
-        }
-      }
-    }
-  } catch (err) {
-    console.warn('RainViewer Radar load warning:', err);
-  }
-}
-
 function updateMapPosition(lat, lon, title, tempStr, rainInfo) {
   if (!state.map) return;
   state.map.flyTo([lat, lon], 13, { duration: 1.5 });
@@ -300,10 +240,10 @@ function updateMapPosition(lat, lon, title, tempStr, rainInfo) {
   }
 
   const popupHTML = `
-    <div style="text-align: center; padding: 6px 10px; font-family: inherit;">
-      <div style="font-size: 13px; font-weight: 700; color: #38bdf8; margin-bottom: 2px;">📍 ${title}</div>
-      <div style="font-size: 22px; font-weight: 800; color: #ffffff;">${tempStr}</div>
-      <div style="font-size: 12px; margin-top: 4px; color: ${rainInfo.isRain ? '#38bdf8' : '#10b981'}; font-weight: 600;">
+    <div style="text-align: center; padding: 4px 8px; font-family: inherit;">
+      <div style="font-size: 12px; font-weight: 700; color: #38bdf8; margin-bottom: 2px;">📍 ${title}</div>
+      <div style="font-size: 20px; font-weight: 800; color: #ffffff;">${tempStr}</div>
+      <div style="font-size: 11px; margin-top: 2px; color: ${rainInfo.isRain ? '#38bdf8' : '#10b981'}; font-weight: 600;">
         ${rainInfo.text}
       </div>
     </div>
@@ -318,12 +258,18 @@ function updateMapPosition(lat, lon, title, tempStr, rainInfo) {
   }, 200);
 }
 
-// Detailed Reverse Geocoding
+// Detailed Reverse Geocoding (Robust & Fail-safe)
 async function fetchReverseGeocoding(lat, lon) {
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+
     const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&accept-language=vi`, {
-      headers: { 'Accept-Language': 'vi' }
+      headers: { 'Accept-Language': 'vi' },
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
+
     if (res.ok) {
       const data = await res.json();
       const addr = data.address || {};
@@ -359,37 +305,40 @@ async function fetchReverseGeocoding(lat, lon) {
       return { primaryName, subName };
     }
   } catch (err) {
-    console.warn('Reverse geocoding warning:', err);
+    console.warn('Geocoding fail, fallback to coordinate format:', err);
   }
   return { primaryName: `Tọa độ (${lat.toFixed(2)}, ${lon.toFixed(2)})`, subName: 'Việt Nam' };
 }
 
 async function fetchWeatherForCoords(lat, lon, isUserGeo = false) {
   showLoader('Đang cập nhật thời tiết khu vực...');
-  try {
-    state.lat = lat;
-    state.lon = lon;
-    state.isUserLocation = isUserGeo;
+  state.lat = lat;
+  state.lon = lon;
+  state.isUserLocation = isUserGeo;
 
+  try {
     const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,weather_code,surface_pressure,wind_speed_10m,wind_direction_10m&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,uv_index_max&timezone=auto`;
     const aqiUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi,pm2_5,pm10`;
 
-    const [weatherRes, aqiRes, geoInfo] = await Promise.all([
-      fetch(weatherUrl).then(r => r.json()),
+    // Fetch primary weather data first
+    const weatherRes = await fetch(weatherUrl).then(r => r.json());
+    state.weatherData = weatherRes;
+
+    // Fetch AQI and Geocoding silently (Fail-safe)
+    const [aqiRes, geoInfo] = await Promise.all([
       fetch(aqiUrl).then(r => r.json()).catch(() => null),
-      fetchReverseGeocoding(lat, lon)
+      fetchReverseGeocoding(lat, lon).catch(() => ({ primaryName: `Vùng (${lat.toFixed(2)}, ${lon.toFixed(2)})`, subName: 'Việt Nam' }))
     ]);
 
-    state.weatherData = weatherRes;
     state.aqiData = aqiRes;
     state.locationName = geoInfo.primaryName;
     state.locationSub = geoInfo.subName;
 
     renderAllData();
-    hideLoader();
   } catch (err) {
-    console.error('Fetch Weather Error:', err);
-    showError('Không thể tải dữ liệu thời tiết khu vực. Vui lòng kiểm tra lại!');
+    console.error('Fetch Main Weather Error:', err);
+  } finally {
+    hideLoader();
   }
 }
 
@@ -454,7 +403,7 @@ function renderAllData() {
   el.pressure.textContent = `${Math.round(current.surface_pressure)} hPa`;
   el.visibility.textContent = '10 km';
 
-  // Render Forecasts (Sửa dứt điểm 100% trùng 2 ô "Bây giờ")
+  // Render Forecasts
   renderHourlyForecast(hourly);
   renderDailyForecast(daily);
 
@@ -606,10 +555,9 @@ function getUserLocation() {
       },
       (err) => {
         console.warn('Geolocation denied or failed:', err.message);
-        showError('Không thể lấy vị trí GPS tự động. Bạn có thể tìm kiếm hoặc nhấp trực tiếp trên bản đồ.');
         fetchWeatherForCoords(state.lat, state.lon, false);
       },
-      { enableHighAccuracy: true, timeout: 12000 }
+      { enableHighAccuracy: true, timeout: 10000 }
     );
   } else {
     fetchWeatherForCoords(state.lat, state.lon, false);
@@ -620,44 +568,11 @@ function getUserLocation() {
 function setupEvents() {
   el.btnGeo.addEventListener('click', getUserLocation);
   el.btnRefresh.addEventListener('click', () => fetchWeatherForCoords(state.lat, state.lon, state.isUserLocation));
-  el.btnRetry.addEventListener('click', () => fetchWeatherForCoords(state.lat, state.lon, state.isUserLocation));
   
   el.btnRecenter.addEventListener('click', () => {
     if (state.map) {
       state.map.flyTo([state.lat, state.lon], 13);
       setTimeout(() => state.map.invalidateSize(), 200);
-    }
-  });
-
-  // Toggle Map Style: Standard Road Map vs Esri Satellite
-  el.btnMapStyle.addEventListener('click', () => {
-    if (!state.map || !state.baseTileOsm || !state.baseTileSat) return;
-    state.isSatellite = !state.isSatellite;
-    if (state.isSatellite) {
-      state.map.removeLayer(state.baseTileOsm);
-      state.baseTileSat.addTo(state.map);
-      el.btnMapStyle.innerHTML = '<i data-lucide="map"></i> <span>Bản đồ Đường bộ</span>';
-      el.btnMapStyle.classList.add('active');
-    } else {
-      state.map.removeLayer(state.baseTileSat);
-      state.baseTileOsm.addTo(state.map);
-      el.btnMapStyle.innerHTML = '<i data-lucide="layers"></i> <span>Bản đồ Vệ tinh</span>';
-      el.btnMapStyle.classList.remove('active');
-    }
-    initIcons();
-  });
-
-  el.btnRadarToggle.addEventListener('click', async () => {
-    state.radarVisible = !state.radarVisible;
-    if (state.radarVisible) {
-      el.btnRadarToggle.classList.add('active');
-      if (!state.radarLayer) {
-        await loadRadarOverlay();
-      }
-      if (state.radarLayer) state.radarLayer.addTo(state.map);
-    } else {
-      el.btnRadarToggle.classList.remove('active');
-      if (state.radarLayer) state.map.removeLayer(state.radarLayer);
     }
   });
 
