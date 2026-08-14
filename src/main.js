@@ -181,16 +181,20 @@ function initMap() {
       zoomControl: true
     });
 
-    // Tile Layer 1: OpenStreetMap Standard (Full street resolution)
+    // Tile Layer 1: OpenStreetMap Standard (Full street resolution, maxNativeZoom: 18)
     state.baseTileOsm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      minZoom: 1,
       maxZoom: 19,
+      maxNativeZoom: 18,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     });
 
     // Tile Layer 2: Esri Satellite World Imagery
     state.baseTileSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      maxZoom: 18,
-      attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+      minZoom: 1,
+      maxZoom: 19,
+      maxNativeZoom: 18,
+      attribution: 'Tiles &copy; Esri'
     });
 
     // Default to OpenStreetMap Standard
