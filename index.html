@@ -19,7 +19,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   
   <!-- Custom Style -->
-  <link rel="stylesheet" href="./src/style.css" />
+  <link rel="stylesheet" href="./src/style.css?v=1.0.1" />
 </head>
 <body class="theme-default">
   <div id="app" class="app-container">
@@ -41,7 +41,7 @@
       <div class="search-box">
         <div class="search-input-wrapper">
           <i data-lucide="search" class="search-icon"></i>
-          <input type="text" id="citySearch" placeholder="Tìm kiếm thành phố, địa danh..." autocomplete="off" />
+          <input type="text" id="citySearch" placeholder="Tìm kiếm thành phố, quận huyện..." autocomplete="off" />
           <button id="clearSearch" class="clear-btn hidden" aria-label="Xóa">
             <i data-lucide="x"></i>
           </button>
@@ -79,7 +79,7 @@
       <!-- Dashboard Grid -->
       <div class="dashboard-grid">
 
-        <!-- Left Column: Hero Current Weather & Highlights -->
+        <!-- Left Column: Hero Current Weather & Map -->
         <section class="column-left">
           
           <!-- Hero Card: Current Weather -->
@@ -87,7 +87,7 @@
             <div class="hero-header">
               <div class="location-info">
                 <h2 id="locationName">Đang định vị...</h2>
-                <p id="locationSub">Đang cập nhật tọa độ...</p>
+                <p id="locationSub">Đang cập nhật vị trí chi tiết...</p>
               </div>
               <div class="live-time" id="currentTime">--:--</div>
             </div>
@@ -122,6 +122,29 @@
             </div>
           </div>
 
+          <!-- Interactive Map Container (Đưa lên vị trí trung tâm nổi bật) -->
+          <div class="card card-map">
+            <div class="card-header map-header">
+              <h3><i data-lucide="map-pin"></i> Bản đồ Định vị Vị trí & Live Radar Mây Mưa</h3>
+              <div class="map-controls">
+                <button id="btnRadarToggle" class="btn btn-sm btn-radar active" title="Bật/Tắt Radar Mưa thời gian thực">
+                  <span class="radar-dot"></span> Radar Mưa Live
+                </button>
+                <button id="btnRecenter" class="btn btn-icon btn-sm" title="Về vị trí của tôi">
+                  <i data-lucide="crosshair"></i>
+                </button>
+              </div>
+            </div>
+            
+            <div class="map-wrapper">
+              <div id="map"></div>
+              <div class="map-coords-badge" id="mapCoords">Vị trí: Đang xác định...</div>
+            </div>
+            <div class="map-footer-hint">
+              <i data-lucide="mouse-pointer-click"></i> <span>Nhấp vào bất kì điểm nào trên bản đồ để xem ngay dự báo & cảnh báo mưa khu vực đó.</span>
+            </div>
+          </div>
+
           <!-- Hourly Forecast Card -->
           <div class="card card-hourly">
             <div class="card-header">
@@ -132,6 +155,11 @@
             </div>
           </div>
 
+        </section>
+
+        <!-- Right Column: Weather Metrics & 7-Day Forecast -->
+        <section class="column-right">
+          
           <!-- Weather Details Metrics Grid -->
           <div class="metrics-grid">
             
@@ -191,34 +219,6 @@
 
           </div>
 
-        </section>
-
-        <!-- Right Column: Interactive Map & 7-Day Forecast -->
-        <section class="column-right">
-          
-          <!-- Interactive Map Container -->
-          <div class="card card-map">
-            <div class="card-header map-header">
-              <h3><i data-lucide="map-pin"></i> Bản đồ Định vị & Live Radar Mây Mưa</h3>
-              <div class="map-controls">
-                <button id="btnRadarToggle" class="btn btn-sm btn-radar active" title="Bật/Tắt Radar Mưa thời gian thực">
-                  <span class="radar-dot"></span> Radar Mưa Live
-                </button>
-                <button id="btnRecenter" class="btn btn-icon btn-sm" title="Về vị trí của tôi">
-                  <i data-lucide="crosshair"></i>
-                </button>
-              </div>
-            </div>
-            
-            <div class="map-wrapper">
-              <div id="map"></div>
-              <div class="map-coords-badge" id="mapCoords">Vị trí: Đang xác định...</div>
-            </div>
-            <div class="map-footer-hint">
-              <i data-lucide="mouse-pointer-click"></i> <span>Nhấp vào bất kì vị trí nào trên bản đồ để xem chi tiết thời tiết & cảnh báo mưa khu vực đó.</span>
-            </div>
-          </div>
-
           <!-- 7-Day Forecast Card -->
           <div class="card card-daily">
             <div class="card-header">
@@ -236,11 +236,11 @@
 
     <!-- Footer -->
     <footer class="app-footer">
-      <p>Powered by Open-Meteo & Leaflet OpenStreetMap • Phát triển với 🔥 thiết kế Premium UI/UX</p>
+      <p>Powered by Open-Meteo & Leaflet OpenStreetMap • SkyPulse Weather v1.0.1</p>
     </footer>
 
   </div>
 
-  <script type="module" src="./src/main.js"></script>
+  <script type="module" src="./src/main.js?v=1.0.1"></script>
 </body>
 </html>
